@@ -5,11 +5,11 @@ import {
   type EurostatLabourSeriesId,
 } from "@/lib/eurostat-labour";
 
+// Only fetch series that have publicly available Eurostat datasets
+// JVR and WAGE_GROWTH do not have accessible public datasets as of 2026
 const LABOUR_SERIES_IDS: EurostatLabourSeriesId[] = [
   "UNR",
   "EMP",
-  "JVR",
-  "WAGE_GROWTH",
 ];
 
 export async function GET() {
@@ -39,8 +39,8 @@ export async function GET() {
     const euroAreaLabour = calculateEuroAreaLabourState({
       unemploymentSeries: series.UNR ?? null,
       employmentSeries: series.EMP ?? null,
-      jobVacanciesSeries: series.JVR ?? null,
-      wageGrowthSeries: series.WAGE_GROWTH ?? null,
+      jobVacanciesSeries: null, // Not available from public Eurostat API
+      wageGrowthSeries: null, // Not available from public Eurostat API
       errors,
     });
 

@@ -38,8 +38,39 @@ function makeMonthlySeries(
   };
 }
 
+function makeAnnualSeries(
+  id: "EMP",
+  value: number,
+  freshness: "current" | "stale" = "current"
+): EurostatLabourSeries {
+  const observations: EurostatLabourObservation[] = [];
+  for (let i = 0; i < 18; i += 1) {
+    const year = 2024 - (17 - i);
+    observations.push({
+      date: `${year}`,
+      value: value + (Math.random() - 0.5) * 2,
+      flag: null,
+    });
+  }
+  return {
+    id,
+    dataset: "lfsa_egan2",
+    label: "Employment Rate (annual)",
+    source: "Eurostat",
+    sourceUrl: "https://ec.europa.eu/eurostat/lfsa_egan2",
+    geo: "EA21",
+    unit: "PC",
+    frequency: "A",
+    filters: { freq: "A", sex: "T", age: "Y20-64", geo: "EA21" },
+    lastUpdated: "2026-10-09T11:00:00Z",
+    freshness,
+    latestObservationDate: observations[observations.length - 1]!.date,
+    observations,
+  };
+}
+
 function makeQuarterlySeries(
-  id: "EMP" | "JVR" | "WAGE_GROWTH",
+  id: "JVR" | "WAGE_GROWTH",
   value: number,
   freshness: "current" | "stale" = "current"
 ): EurostatLabourSeries {
@@ -54,12 +85,10 @@ function makeQuarterlySeries(
     });
   }
   const labels: Record<string, string> = {
-    EMP: "Employment Rate",
     JVR: "Job Vacancy Rate",
     WAGE_GROWTH: "Wage Growth",
   };
   const datasets: Record<string, string> = {
-    EMP: "lfsa_egan2",
     JVR: "jvst_annex1",
     WAGE_GROWTH: "earn_hrl_ind2c",
   };
@@ -72,7 +101,7 @@ function makeQuarterlySeries(
     geo: "EA21",
     unit: "PC",
     frequency: "Q",
-    filters: { freq: "Q", s_adj: "SA", geo: "EA21" },
+    filters: { freq: "Q", geo: "EA21" },
     lastUpdated: "2026-10-09T11:00:00Z",
     freshness,
     latestObservationDate: observations[observations.length - 1]!.date,
@@ -84,14 +113,13 @@ describe("Euro Area Labour State Engine v1", () => {
   it("classifies labour market with all indicators available", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: makeMonthlySeries("UNR", 6.2),
-      employmentSeries: makeQuarterlySeries("EMP", 72),
-      jobVacanciesSeries: makeQuarterlySeries("JVR", 1.8),
-      wageGrowthSeries: makeQuarterlySeries("WAGE_GROWTH", 3),
+      employmentSeries: makeAnnualSeries("EMP", 72),
+      jobVacanciesSeries: null,
+      wageGrowthSeries: null,
     });
     expect(state.status).toBe("available");
     expect(state.assessment.currentLabourState).not.toBe("UNAVAILABLE");
     expect(state.assessment.labourMomentum).not.toBe("UNAVAILABLE");
-    expect(state.assessment.wagePressure).not.toBe("UNAVAILABLE");
   });
 
   it("classifies labour market with only unemployment available", () => {
@@ -120,7 +148,7 @@ describe("Euro Area Labour State Engine v1", () => {
   it("handles missing unemployment gracefully", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: null,
-      employmentSeries: makeQuarterlySeries("EMP", 72),
+      employmentSeries: makeAnnualSeries("EMP", 72),
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
       errors: { UNR: "HTTP 404: Dataset not found" },
@@ -150,22 +178,22 @@ describe("Euro Area Labour State Engine v1", () => {
     expect(lowUnempState.assessment.currentLabourState.length).toBeGreaterThan(0);
   });
 
-  it("includes wage pressure in assessment when wage data available", () => {
+  it("indicates wage pressure unavailable when wage data not available", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: makeMonthlySeries("UNR", 6),
       employmentSeries: null,
       jobVacanciesSeries: null,
-      wageGrowthSeries: makeQuarterlySeries("WAGE_GROWTH", 4),
+      wageGrowthSeries: null,
     });
-    expect(state.wageGrowth.indicator?.status).toBe("available");
-    expect(state.assessment.wagePressure).not.toBe("UNAVAILABLE");
+    expect(state.wageGrowth.indicator?.status).toBe("unavailable");
+    expect(state.assessment.wagePressure).toBe("UNAVAILABLE");
   });
 
   it("calculates 3-month and 6-month changes for indicators", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: makeMonthlySeries("UNR", 6),
-      employmentSeries: makeQuarterlySeries("EMP", 72),
-      jobVacanciesSeries: makeQuarterlySeries("JVR", 2),
+      employmentSeries: makeAnnualSeries("EMP", 72),
+      jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
     expect(state.employment.indicator?.threeMonthChange.value).not.toBeNull();

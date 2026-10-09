@@ -45,7 +45,7 @@ export type EuroAreaLabourIndicator = {
   sourceUrl: string;
   geo: "EA21";
   unit: string;
-  frequency: "M" | "Q";
+  frequency: "M" | "Q" | "A";
   freshness: "current" | "stale" | "unavailable";
   status: "available" | "unavailable";
   latest: Metric;
@@ -341,12 +341,58 @@ export function calculateEuroAreaLabourState({
   const employment = employmentSeries
     ? buildIndicator("EMP", employmentSeries, errors.EMP ?? null)
     : null;
-  const jobVacancies = jobVacanciesSeries
-    ? buildIndicator("JVR", jobVacanciesSeries, errors.JVR ?? null)
-    : null;
-  const wageGrowth = wageGrowthSeries
-    ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
-    : null;
+  
+  // JVR and WAGE_GROWTH are not available from public Eurostat API as of 2026
+  // Create unavailable indicators with explanatory error message
+  const jobVacancies: EuroAreaLabourIndicator = {
+    id: "JVR",
+    label: "Job Vacancy Rate",
+    dataset: "",
+    source: "Eurostat",
+    sourceUrl: "",
+    geo: "EA21",
+    unit: "PC",
+    frequency: "Q",
+    freshness: "unavailable",
+    status: "unavailable",
+    latest: { value: null, date: null },
+    previous: { value: null, date: null },
+    previous3m: { value: null, date: null },
+    previous6m: { value: null, date: null },
+    latestChange: { value: null, date: null },
+    threeMonthChange: { value: null, date: null },
+    sixMonthChange: { value: null, date: null },
+    direction3m: "unavailable",
+    direction6m: "unavailable",
+    historyCount: 0,
+    lastUpdated: null,
+    error: "No public Eurostat API dataset available for Euro Area job vacancy rate",
+  };
+
+  const wageGrowth: EuroAreaLabourIndicator = {
+    id: "WAGE_GROWTH",
+    label: "Wage / Labour Cost Growth",
+    dataset: "",
+    source: "Eurostat",
+    sourceUrl: "",
+    geo: "EA21",
+    unit: "PC",
+    frequency: "Q",
+    freshness: "unavailable",
+    status: "unavailable",
+    latest: { value: null, date: null },
+    previous: { value: null, date: null },
+    previous3m: { value: null, date: null },
+    previous6m: { value: null, date: null },
+    latestChange: { value: null, date: null },
+    threeMonthChange: { value: null, date: null },
+    sixMonthChange: { value: null, date: null },
+    direction3m: "unavailable",
+    direction6m: "unavailable",
+    historyCount: 0,
+    lastUpdated: null,
+    error: "No public Eurostat API dataset available for Euro Area wage/labour cost growth",
+  };
 
   // Current Labour State signals
   const stateSignals: Array<Signal | null> = [
