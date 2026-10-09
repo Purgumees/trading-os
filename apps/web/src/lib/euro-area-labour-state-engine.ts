@@ -600,10 +600,18 @@ export function calculateEuroAreaLabourState({
     explanations.push(`Wage data unavailable: ${wageGrowth.error}`);
   }
 
+  // Available only when all four official series are present.
+  // Missing series must not be silently presented as a complete assessment.
+  const presentSeriesCount = [
+    unemploymentSeries,
+    employmentSeries,
+    jobVacanciesSeries,
+    wageGrowthSeries,
+  ].filter((series) => series !== null && series.observations.length > 0).length;
   const status =
-    unemployment && unemploymentSeries
+    presentSeriesCount === 4
       ? "available"
-      : employment || jobVacancies || wageGrowth
+      : presentSeriesCount > 0
         ? "partial"
         : "unavailable";
 
