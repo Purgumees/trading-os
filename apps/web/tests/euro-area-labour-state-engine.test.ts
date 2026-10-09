@@ -117,9 +117,19 @@ describe("Euro Area Labour State Engine v1", () => {
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
-    expect(state.status).toBe("available");
+    expect(state.status).toBe("partial");
     expect(state.assessment.currentLabourState).not.toBe("UNAVAILABLE");
     expect(state.assessment.labourMomentum).not.toBe("UNAVAILABLE");
+  });
+
+  it("reports available only with all four official indicators", () => {
+    const state = calculateEuroAreaLabourState({
+      unemploymentSeries: makeMonthlySeries("UNR", 6.2),
+      employmentSeries: makeAnnualSeries("EMP", 72),
+      jobVacanciesSeries: makeQuarterlySeries("JVR", 2.5),
+      wageGrowthSeries: makeQuarterlySeries("WAGE_GROWTH", 3),
+    });
+    expect(state.status).toBe("available");
   });
 
   it("classifies labour market with only unemployment available", () => {
