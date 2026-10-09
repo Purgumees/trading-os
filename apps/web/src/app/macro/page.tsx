@@ -14,6 +14,12 @@ import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
 import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
+import { HistoricalDataDisplay } from "@/components/HistoricalDataDisplay";
+import { HistoricalIndicatorGrid } from "@/components/HistoricalIndicatorGrid";
+import {
+  transformHicpToHistoricalDisplay,
+  transformLabourToHistoricalDisplay,
+} from "@/lib/historical-data-utils";
 
 type Metric = {
   value: number | null;
@@ -1718,6 +1724,84 @@ export default function MacroPage() {
             </p>
           )}
         </article>
+      </section>
+
+      {/* HISTORICAL DATA DISPLAY SECTION */}
+      <section className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Historical Data Display</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Complete historical observations with freshness tracking and trend analysis.
+          </p>
+        </div>
+
+        {/* Euro Area Historical Indicators */}
+        {euroAreaInflation && (
+          <div className="mb-8">
+            <h3 className="mb-4 text-base font-semibold text-gray-200">Euro Area Inflation (Eurostat HICP)</h3>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {["Headline HICP", "Core HICP"].map((label, idx) => {
+                const series = idx === 0 ? euroAreaInflation.headline : euroAreaInflation.core;
+                const displayProps = transformHicpToHistoricalDisplay(series);
+                return (
+                  <HistoricalDataDisplay
+                    key={label}
+                    {...displayProps}
+                    label={label}
+                    observations={displayProps.observations.slice(0, 6)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Euro Area Labour Historical Indicators */}
+        {euroAreaLabour && (
+          <div>
+            <h3 className="mb-4 text-base font-semibold text-gray-200">Euro Area Labour (Eurostat & ECB)</h3>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {euroAreaLabour.unemployment?.indicator && (
+                <HistoricalDataDisplay
+                  key="unemployment"
+                  {...transformLabourToHistoricalDisplay(euroAreaLabour.unemployment.indicator, "Unemployment Rate (%)")}
+                  observations={transformLabourToHistoricalDisplay(
+                    euroAreaLabour.unemployment.indicator,
+                    "Unemployment Rate (%)"
+                  ).observations.slice(0, 6)}
+                />
+              )}
+              {euroAreaLabour.employment?.indicator && (
+                <HistoricalDataDisplay
+                  key="employment"
+                  {...transformLabourToHistoricalDisplay(
+                    euroAreaLabour.employment.indicator,
+                    "Employment Level (thousands of persons)"
+                  )}
+                  observations={transformLabourToHistoricalDisplay(
+                    euroAreaLabour.employment.indicator,
+                    "Employment Level (thousands of persons)"
+                  ).observations.slice(0, 5)}
+                />
+              )}
+              {euroAreaLabour.wageGrowth?.indicator && (
+                <HistoricalDataDisplay
+                  key="wage-growth"
+                  {...transformLabourToHistoricalDisplay(euroAreaLabour.wageGrowth.indicator, "Wage Growth (YoY % change)")}
+                  observations={transformLabourToHistoricalDisplay(
+                    euroAreaLabour.wageGrowth.indicator,
+                    "Wage Growth (YoY % change)"
+                  ).observations.slice(0, 6)}
+                />
+              )}
+              {!euroAreaLabour.employment?.indicator &&
+                !euroAreaLabour.wageGrowth?.indicator &&
+                !euroAreaLabour.jobVacancies?.indicator && (
+                  <p className="col-span-full text-sm text-gray-400">Limited labour indicator availability</p>
+                )}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="mb-8">

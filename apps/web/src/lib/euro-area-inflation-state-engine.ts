@@ -61,6 +61,8 @@ type EuroHicpSeriesResult = {
   rawObservations: EurostatHicpObservation[];
 };
 
+export type { EuroHicpSeriesResult };
+
 export type EuroAreaInflationState = {
   status: "available" | "partial" | "unavailable";
   area: "Euro area";

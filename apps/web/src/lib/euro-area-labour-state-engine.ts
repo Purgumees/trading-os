@@ -60,6 +60,7 @@ export type EuroAreaLabourIndicator = {
   historyCount: number;
   lastUpdated: string | null;
   error: string | null;
+  rawObservations: EurostatLabourObservation[];
 };
 
 export type EuroAreaLabourState = {
@@ -241,6 +242,7 @@ function buildIndicator(
       historyCount: 0,
       lastUpdated: null,
       error,
+      rawObservations: [],
     };
   }
 
@@ -321,6 +323,7 @@ function buildIndicator(
     historyCount: obs.length,
     lastUpdated: series.lastUpdated,
     error: null,
+    rawObservations: obs,
   };
 }
 
@@ -366,6 +369,7 @@ export function calculateEuroAreaLabourState({
     historyCount: 0,
     lastUpdated: null,
     error: "No public Eurostat API dataset available for Euro Area job vacancy rate",
+    rawObservations: [],
   };
 
   // Wage Growth is now available from national accounts compensation per employee data
@@ -394,6 +398,7 @@ export function calculateEuroAreaLabourState({
         historyCount: 0,
         lastUpdated: null,
         error: errors.WAGE_GROWTH ?? null,
+        rawObservations: [],
       };
 
   // Current Labour State signals
