@@ -231,10 +231,9 @@ function getObservationAtLookback(
     const quarterLookback = Math.round(lookbackMonths / 3);
     lookbackIndex = observations.length - 1 - quarterLookback;
   } else {
-    // Annual: Only support YoY (1 year = 1 observation back)
-    // Do not use 3M/6M for annual data
-    if (lookbackMonths > 3) return undefined;
-    lookbackIndex = observations.length - 2;
+    // Annual observations cannot support 3-month or 6-month comparisons.
+    // Return no observation rather than silently substituting a YoY value.
+    return undefined;
   }
 
   return lookbackIndex >= 0 ? observations[lookbackIndex] : undefined;
