@@ -180,9 +180,13 @@ function thresholdScore(
 }
 
 function unemploymentScore(value: number | null): number | null {
-  // Inverse: lower unemployment is better
-  // BUG FIX: Explicitly check for null instead of relying on truthiness,
-  // which would treat score=0 (neutral) as falsy and return null instead of 0
+  // Lower unemployment is better. thresholdScore() already returns the correct sign:
+  // - At 5.0% (very low) → +2 (very strong)
+  // - At 6.2% (low) → +1 (strong)
+  // - At 7.0% (neutral) → 0 (neutral)
+  // - At 8.0% (elevated) → -1 (cooling)
+  // - At 8.5% (very high) → -2 (weak)
+  // Do NOT negate. Return thresholdScore directly.
   const score = thresholdScore(
     value,
     [
@@ -192,7 +196,7 @@ function unemploymentScore(value: number | null): number | null {
       LABOUR_THRESHOLDS.state.unemploymentRate.elevated,
     ]
   );
-  return score !== null ? -score : null;
+  return score;
 }
 
 function trendScore(change: number | null): number | null {
@@ -202,6 +206,38 @@ function trendScore(change: number | null): number | null {
   if (change >= -0.3) return 0;
   if (change >= -0.6) return -1;
   return -2;
+}
+
+/**
+ * Get the observation at a specific lookback period, accounting for data frequency
+ * @param observations Array of observations (latest at the end)
+ * @param frequency M (monthly), Q (quarterly), or A (annual)
+ * @param lookbackMonths Number of months to look back (3 or 6)
+ * @returns The observation at the lookback, or undefined if not enough history
+ */
+function getObservationAtLookback(
+  observations: EurostatLabourObservation[],
+  frequency: "M" | "Q" | "A",
+  lookbackMonths: number
+): EurostatLabourObservation | undefined {
+  if (observations.length === 0) return undefined;
+
+  let lookbackIndex: number;
+  if (frequency === "M") {
+    // Monthly: 3 months back = 3 observations, 6 months back = 6 observations
+    lookbackIndex = observations.length - 1 - lookbackMonths;
+  } else if (frequency === "Q") {
+    // Quarterly: 3 months back ≈ 1 quarter, 6 months back ≈ 2 quarters
+    const quarterLookback = Math.round(lookbackMonths / 3);
+    lookbackIndex = observations.length - 1 - quarterLookback;
+  } else {
+    // Annual: Only support YoY (1 year = 1 observation back)
+    // Do not use 3M/6M for annual data
+    if (lookbackMonths > 3) return undefined;
+    lookbackIndex = observations.length - 2;
+  }
+
+  return lookbackIndex >= 0 ? observations[lookbackIndex] : undefined;
 }
 
 function buildIndicator(
@@ -240,14 +276,10 @@ function buildIndicator(
   const obs = series.observations;
   const latest = obs[obs.length - 1];
   const previous = obs[obs.length - 2];
-  const previous3m =
-    series.frequency === "M"
-      ? obs[obs.length - 4]
-      : obs[obs.length - 3];
-  const previous6m =
-    series.frequency === "M"
-      ? obs[obs.length - 7]
-      : obs[obs.length - 6];
+  
+  // Use frequency-aware lookbacks
+  const previous3m = getObservationAtLookback(obs, series.frequency, 3);
+  const previous6m = getObservationAtLookback(obs, series.frequency, 6);
 
   const latestChange =
     latest && previous && previous.value !== null
@@ -336,46 +368,44 @@ export function calculateEuroAreaLabourState({
     ? buildIndicator("EMP", employmentSeries, errors.EMP ?? null)
     : null;
   
-  // JVR is not available from public Eurostat API as of 2026
-  const jobVacancies: EuroAreaLabourIndicator = {
-    id: "JVR",
-    label: "Job Vacancy Rate",
-    dataset: "",
-    source: "Eurostat",
-    sourceUrl: "",
-    geo: "EA21",
-    unit: "PC",
-    frequency: "Q",
-    freshness: "unavailable",
-    status: "unavailable",
-    latest: { value: null, date: null },
-    previous: { value: null, date: null },
-    previous3m: { value: null, date: null },
-    previous6m: { value: null, date: null },
-    latestChange: { value: null, date: null },
-    threeMonthChange: { value: null, date: null },
-    sixMonthChange: { value: null, date: null },
-    direction3m: "unavailable",
-    direction6m: "unavailable",
-    historyCount: 0,
-    lastUpdated: null,
-    error: "Job Vacancy Rate not available from public Eurostat dissemination API as of 2026. Search 'jvs_q' or 'jvs' in Eurostat database for potential future availability.",
-    rawObservations: [],
-  };
-
-  // Wage Growth is not available from public Eurostat API as of 2026
-  // Structure of Earnings Survey (SES) is annual and discontinued; national accounts
-  // compensation per employee dataset is not in dissemination API
-  const wageGrowth = wageGrowthSeries
-    ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
+  const jobVacancies = jobVacanciesSeries
+    ? buildIndicator("JVR", jobVacanciesSeries, errors.JVR ?? null)
     : {
-        id: "WAGE_GROWTH" as const,
-        label: "Wage Growth / Compensation per Employee",
-        dataset: "",
+        id: "JVR" as const,
+        label: "Job Vacancy Rate",
+        dataset: "jvs_q_nace2",
         source: "Eurostat" as const,
         sourceUrl: "",
         geo: "EA21" as const,
         unit: "PC",
+        frequency: "Q" as const,
+        freshness: "unavailable" as const,
+        status: "unavailable" as const,
+        latest: { value: null, date: null },
+        previous: { value: null, date: null },
+        previous3m: { value: null, date: null },
+        previous6m: { value: null, date: null },
+        latestChange: { value: null, date: null },
+        threeMonthChange: { value: null, date: null },
+        sixMonthChange: { value: null, date: null },
+        direction3m: "unavailable" as const,
+        direction6m: "unavailable" as const,
+        historyCount: 0,
+        lastUpdated: null,
+        error: errors.JVR ?? null,
+        rawObservations: [],
+      };
+
+  const wageGrowth = wageGrowthSeries
+    ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
+    : {
+        id: "WAGE_GROWTH" as const,
+        label: "Labour Cost Index (quarterly, YoY % change)",
+        dataset: "lc_lci_r2_q",
+        source: "Eurostat" as const,
+        sourceUrl: "",
+        geo: "EA21" as const,
+        unit: "PCH_PP_13",
         frequency: "Q" as const,
         freshness: "unavailable" as const,
         status: "unavailable" as const,

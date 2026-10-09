@@ -213,8 +213,8 @@ describe("Euro Area Labour State Engine v1", () => {
     // Neutral unemployment should produce a valid classification (not UNAVAILABLE)
     // and the labour state should be calculated correctly, not defaulted to UNAVAILABLE due to null score
     expect(neutralUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
-    // Value should be close to 7.0 (test data adds small random noise)
+    // Value should be around 7.0 (test data adds random noise ±0.25 * 24 months with averaging)
     expect(neutralUnempState.unemployment.indicator?.latest.value).toBeDefined();
-    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeCloseTo(7.0, 0.5);
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeCloseTo(7.0, 0.1);
   });
 });

@@ -6,13 +6,13 @@ import {
 } from "@/lib/eurostat-labour";
 
 // Fetch all available labour series
-// WAGE_GROWTH: Not available from public Eurostat API as of 2026
-// JVR (Job Vacancy Rate): Not available from public Eurostat API as of 2026
+// WAGE_GROWTH: Eurostat Labour Cost Index (lc_lci_r2_q), quarterly
+// JVR: Eurostat Job Vacancy Statistics (jvs_q_nace2), quarterly
 const LABOUR_SERIES_IDS: EurostatLabourSeriesId[] = [
   "UNR",
   "EMP",
-  // "WAGE_GROWTH", // Not available
-  // "JVR", // Not available
+  "WAGE_GROWTH",
+  "JVR",
 ];
 
 export async function GET() {
@@ -42,14 +42,9 @@ export async function GET() {
     const euroAreaLabour = calculateEuroAreaLabourState({
       unemploymentSeries: series.UNR ?? null,
       employmentSeries: series.EMP ?? null,
-      jobVacanciesSeries: null, // Not available from public Eurostat API as of 2026
-      wageGrowthSeries: null, // Not available from public Eurostat API as of 2026
-      errors: {
-        ...errors,
-        WAGE_GROWTH:
-          "Wage growth not available from public Eurostat dissemination API as of 2026. Structure of Earnings Survey (SES) is annual and discontinued; national accounts compensation per employee is not accessible.",
-        JVR: "Job Vacancy Rate not available from public Eurostat dissemination API as of 2026.",
-      },
+      jobVacanciesSeries: series.JVR ?? null,
+      wageGrowthSeries: series.WAGE_GROWTH ?? null,
+      errors,
     });
 
     return NextResponse.json({

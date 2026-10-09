@@ -9,16 +9,22 @@ export const EUROSTAT_LABOUR_API_BASE =
 
 /**
  * Labour data series from Eurostat
- * - UNR: Unemployment rate (monthly, %)
- * - EMP: Employment level (annual, thousands of persons, ages 20-64)
- * - WAGE_GROWTH: NOT AVAILABLE - No official quarterly wage/compensation growth series available
- *   through public Eurostat dissemination API as of 2026. Structure of Earnings Survey (SES) 
- *   is annual and discontinuous. National accounts compensation per employee is unavailable.
- * - JVR: Job vacancy rate - NOT AVAILABLE (no public Eurostat API access as of 2026)
  * 
- * Note: JVR does not have an accessible public Eurostat API endpoint as of 2026.
- * Job vacancy data may be available from national statistics offices but not aggregated
- * to Euro Area level in the official Eurostat dissemination API.
+ * - UNR: Unemployment rate (monthly, seasonally adjusted, %)
+ *   Dataset: une_rt_m, Unit: PC_ACT, Frequency: Monthly
+ * 
+ * - EMP: Employment level (annual, thousands of persons, ages 20-64)
+ *   Dataset: lfsa_egan2, Unit: THS_PER, Frequency: Annual
+ *   CRITICAL: Annual frequency means only YoY changes are valid. Do NOT use for 3M/6M momentum.
+ * 
+ * - JVR: Job vacancy rate (quarterly, %)
+ *   Dataset: jvs_q_nace2, Unit: PC, Frequency: Quarterly, S_Adj: NSA
+ *   Euro Area aggregate: NACE_R2=TOTAL (total of all activities)
+ * 
+ * - WAGE_GROWTH: Labour Cost Index quarterly growth (%)
+ *   Dataset: lc_lci_r2_q, Unit: PCH_PP_13, Frequency: Quarterly, S_Adj: CA
+ *   Represents YoY % change in hourly labour cost across all activities
+ *   NOTE: This is a cost index, not a wage series. Reflects total compensation including non-wage benefits.
  */
 export type EurostatLabourSeriesId = "UNR" | "EMP" | "JVR" | "WAGE_GROWTH";
 
@@ -35,7 +41,7 @@ export type EurostatLabourSeries = {
   source: "Eurostat";
   sourceUrl: string;
   geo: "EA21" | "EUR";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER"; // Percentage variants, level, and YoY change
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13"; // Percentage variants, level, YoY change, and percentage point change
   frequency: "M" | "Q" | "A"; // Monthly, Quarterly, or Annual
   filters: Record<string, string>;
   lastUpdated: string | null;
@@ -49,14 +55,16 @@ type SurveyConfig = {
   dataset: string;
   label: string;
   frequency: "M" | "Q" | "A";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER";
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13";
   filters: Record<string, string>;
 };
 
 const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
-  // Unemployment Rate - Monthly, Eurostat UNE series (une_rt_m)
-  // CRITICAL: Specify unit=PC_ACT to get percentage (not THS_PER = thousand persons)
-  // Unit must be: PC_ACT (Percentage of population in the labour force)
+  // Unemployment Rate - Monthly, Eurostat LFSA series
+  // Dataset: une_rt_m
+  // Unit: PC_ACT (Percentage of population in the labour force)
+  // Frequency: M (monthly), Seasonally Adjusted
+  // Geography: EA21 (Euro area 21 countries)
   UNR: {
     id: "UNR",
     dataset: "une_rt_m",
@@ -72,10 +80,13 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
       geo: "EA21",
     },
   },
-  // Employment Level - Annual, Eurostat LFSA series (lfsa_egan2)
-  // Unit is THS_PER (Thousand Persons), representing employed persons aged 20-64
-  // Do NOT interpret this as an employment rate - it's an absolute level
-  // Engine will calculate YoY growth rates from this level data
+  
+  // Employment Level - Annual, Eurostat LFSA series
+  // Dataset: lfsa_egan2
+  // Unit: THS_PER (Thousands of Persons) - absolute level, NOT rate
+  // Frequency: A (annual), ages 20-64
+  // CRITICAL: This is annual data. Only YoY changes are valid.
+  // Do NOT use for 3M/6M momentum calculations - use employment rate or quarterly employment instead.
   EMP: {
     id: "EMP",
     dataset: "lfsa_egan2",
@@ -90,25 +101,47 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
       geo: "EA21",
     },
   },
-  // Job Vacancy Rate - NOT AVAILABLE (no public Eurostat API dataset)
+
+  // Job Vacancy Rate - Quarterly, Eurostat JVS
+  // Dataset: jvs_q_nace2 (Job Vacancy Statistics by NACE Rev. 2 activity)
+  // Unit: PC (percentage of total posts)
+  // Frequency: Q (quarterly), Not Seasonally Adjusted
+  // Geography: EA21 (Euro area aggregate, NACE_R2=TOTAL means all activities)
   JVR: {
     id: "JVR",
-    dataset: "",
-    label: "Job Vacancy Rate (not available from public Eurostat API)",
+    dataset: "jvs_q_nace2",
+    label: "Job Vacancy Rate (quarterly, %)",
     frequency: "Q",
     unit: "PC",
-    filters: { geo: "EA21" },
+    filters: {
+      freq: "Q",
+      s_adj: "NSA",
+      nace_r2: "TOTAL",
+      geo: "EA21",
+    },
   },
-  // Wage Growth - NOT AVAILABLE from public Eurostat dissemination API as of 2026
-  // Structure of Earnings Survey (earn_ses_pub1s) is annual-only and discontinued data
-  // National accounts compensation per employee dataset is not publicly available
+
+  // Labour Cost Index - Quarterly growth
+  // Dataset: lc_lci_r2_q (Labour Cost Index by NACE Rev. 2 activity - quarterly)
+  // Unit: PCH_PP_13 (% change, percentage points change in previous period)
+  // Represents YoY % change in nominal hourly labour cost (wages + non-wage costs)
+  // Frequency: Q (quarterly), Calendar Adjusted
+  // Geography: EA21 (Euro area aggregate, NACE_R2=TOTAL)
+  // IMPORTANT: This is an index-based measure, not actual wage growth.
+  // It reflects compensation cost changes including social contributions.
   WAGE_GROWTH: {
     id: "WAGE_GROWTH",
-    dataset: "",
-    label: "Wage / Compensation Growth (not available)",
+    dataset: "lc_lci_r2_q",
+    label: "Labour Cost Index (quarterly, YoY % change)",
     frequency: "Q",
-    unit: "PC",
-    filters: { geo: "EA21" },
+    unit: "PCH_PP_13",
+    filters: {
+      freq: "Q",
+      s_adj: "CA",
+      nace_r2: "TOTAL",
+      unit: "PCH_PP_13",
+      geo: "EA21",
+    },
   },
 };
 
