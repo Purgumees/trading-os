@@ -177,34 +177,27 @@ type JsonStatDataset = {
 };
 
 function flatIndexFor(
-  dimensions: Record<string, { label?: string; category?: Record<string, any> }>,
+  dataset: JsonStatDataset,
   coordinateObject: Record<string, string>
-): number | string {
-  // Try using the index property first (which maps coordinate values to flat indices)
-  // If the value is provided directly as a keyed number, use that instead
-  const dimIds = Object.keys(dimensions);
-  
-  // Build the flat index based on the order of dimensions
-  let index = 0;
-  let multiplier = 1;
-
-  for (let dimIndex = dimIds.length - 1; dimIndex >= 0; dimIndex -= 1) {
-    const dimensionId = dimIds[dimIndex]!;
-    const coordinate = coordinateObject[dimensionId];
-    const dimension = dimensions[dimensionId]!;
-    
-    // Get the index for this coordinate from the dimension's category indices
-    const categoryIndex =
-      dimension.category?.index?.[coordinate ?? ""] ?? null;
-
-    if (categoryIndex !== null && categoryIndex !== undefined) {
-      index += categoryIndex * multiplier;
-    }
-
-    const categoryCount = Object.keys(dimension.category?.label ?? {}).length;
-    multiplier *= categoryCount;
+): number {
+  const ids = dataset.id;
+  const sizes = dataset.size;
+  const dimensions = dataset.dimension;
+  if (!ids || !sizes || !dimensions || ids.length !== sizes.length) {
+    throw new Error("Invalid JSON-stat dimension order or sizes");
   }
 
+  let index = 0;
+  for (let i = 0; i < ids.length; i += 1) {
+    const dimId = ids[i]!;
+    const coordinate = coordinateObject[dimId];
+    const category = dimensions[dimId]?.category;
+    const categoryIndex = category?.index?.[coordinate ?? ""];
+    if (coordinate === undefined || typeof categoryIndex !== "number") {
+      throw new Error(`Missing Eurostat category ${dimId}=${coordinate ?? "undefined"}`);
+    }
+    index = index * sizes[i]! + categoryIndex;
+  }
   return index;
 }
 
@@ -230,7 +223,7 @@ export async function fetchEurostatLabourSeries(
     }
 
     const dimensions = jsonStat.dimension;
-    const dimensionIds = Object.keys(dimensions);
+    const dimensionIds = jsonStat.id ?? Object.keys(dimensions);
 
     const observations: EurostatLabourObservation[] = [];
 
@@ -259,7 +252,7 @@ export async function fetchEurostatLabourSeries(
         }
       }
 
-      const flatIndex = flatIndexFor(dimensions, coordinate);
+      const flatIndex = flatIndexFor(jsonStat, coordinate);
       const rawValue = (jsonStat.value as Record<string | number, unknown>)[flatIndex];
 
       if (rawValue !== null && rawValue !== undefined) {
