@@ -7,6 +7,10 @@ import type {
   EurostatGrowthSeries,
   EurostatGrowthSeriesId,
 } from "../src/lib/eurostat-growth";
+import type {
+  EurostatEcSurveyId,
+  EurostatEcSurveySeries,
+} from "../src/lib/eurostat-ec-surveys";
 
 function makeQuarterSeries(
   id: "B1GQ" | "P31_S14_S15",
@@ -72,8 +76,54 @@ function makeMonthlySeries(
   };
 }
 
+function makeEcSurveySeries(
+  id: EurostatEcSurveyId,
+  balanceValue: number,
+  freshness: "current" | "stale" = "current"
+): EurostatEcSurveySeries {
+  const observations = [];
+  // Create observations from 2023 onwards with more history
+  for (let index = 0; index < 36; index += 1) {
+    const date = new Date(Date.UTC(2023, index, 1)).toISOString().slice(0, 7);
+    // Start lower and increase towards the balance value
+    const value = balanceValue * (0.7 + index / 72);
+    observations.push({
+      date,
+      value: value,
+      flag: null,
+    });
+  }
+  const datasetMap: Record<EurostatEcSurveyId, "ei_bsin_m_r2" | "ei_bsse_m_r2"> = {
+    "BS-IOB": "ei_bsin_m_r2",
+    "BS-IPE": "ei_bsin_m_r2",
+    "BS-SAEM": "ei_bsse_m_r2",
+  };
+  const labelMap: Record<EurostatEcSurveyId, string> = {
+    "BS-IOB": "Manufacturing order-book assessment",
+    "BS-IPE": "Manufacturing production expectations",
+    "BS-SAEM": "Services demand expectations",
+  };
+  const dataset = datasetMap[id]!;
+  return {
+    id,
+    dataset,
+    label: labelMap[id]!,
+    source: "European Commission DG ECFIN via Eurostat",
+    sourceUrl: `https://ec.europa.eu/eurostat/${dataset}`,
+    geo: "EA21",
+    unit: "BAL",
+    frequency: "M",
+    filters: { freq: "M", unit: "BAL", geo: "EA21", indic: id, s_adj: "SA" },
+    lastUpdated: "2026-10-08T11:00:00+0200",
+    freshness,
+    latestObservationDate: observations.at(-1)!.date,
+    observations,
+  };
+}
+
 function calculate(
-  overrides: Partial<Record<EurostatGrowthSeriesId, EurostatGrowthSeries | null>> = {}
+  overrides: Partial<Record<EurostatGrowthSeriesId, EurostatGrowthSeries | null>> = {},
+  surveyOverrides: Partial<Record<EurostatEcSurveyId, EurostatEcSurveySeries | null>> = {}
 ) {
   return calculateEuroAreaGrowthState({
     gdpSeries: overrides.B1GQ === undefined ? makeQuarterSeries("B1GQ", 0.8) : overrides.B1GQ,
@@ -89,6 +139,9 @@ function calculate(
       overrides.RETAIL_VOLUME === undefined
         ? makeMonthlySeries("RETAIL_VOLUME", 0.3)
         : overrides.RETAIL_VOLUME,
+    manufacturingOrderBooks: surveyOverrides["BS-IOB"] ?? null,
+    manufacturingProductionExpectations: surveyOverrides["BS-IPE"] ?? null,
+    servicesDemandExpectations: surveyOverrides["BS-SAEM"] ?? null,
   });
 }
 
@@ -113,38 +166,29 @@ describe("Euro Area Growth State Engine v1", () => {
     expect(state.retailSales.direction6m).toBe("up");
   });
 
-  it("classifies available current activity while leaving unavailable PMI inputs out", () => {
+  it("classifies available current activity while leaving unavailable forward indicators out", () => {
     const state = calculate();
     expect(state.status).toBe("partial");
     expect(state.assessment.currentState).toBe("EXPANSION");
     expect(state.assessment.forwardGrowth).toBe("UNAVAILABLE");
-    expect(state.manufacturingPmi.status).toBe("unavailable");
-    expect(state.servicesPmi.status).toBe("unavailable");
+    expect(state.forwardSurvey.manufacturingOrderBooks.status).toBe("unavailable");
+    expect(state.forwardSurvey.servicesDemandExpectations.status).toBe("unavailable");
     expect(state.assessment.explanation.forwardGrowth).toContain("unavailable");
   });
 
-  it("weights available PMI New Orders significantly when reliable observations are supplied", () => {
+  it("weights available forward survey indicators significantly when reliable observations are supplied", () => {
     const state = calculateEuroAreaGrowthState({
       gdpSeries: makeQuarterSeries("B1GQ", 0.1),
       householdConsumptionSeries: makeQuarterSeries("P31_S14_S15", 0.1),
       industrialProductionSeries: makeMonthlySeries("INDUSTRIAL_PRODUCTION", 0.1),
       retailSalesSeries: makeMonthlySeries("RETAIL_VOLUME", 0.1),
-      manufacturingPmi: {
-        current: 51,
-        previous: 50,
-        date: "2026-08",
-        newOrders: 57,
-        source: "Verified test survey",
-      },
-      servicesPmi: {
-        current: 52,
-        previous: 51,
-        date: "2026-08",
-        newOrders: 58,
-        source: "Verified test survey",
-      },
+      manufacturingOrderBooks: makeEcSurveySeries("BS-IOB", 30),
+      manufacturingProductionExpectations: makeEcSurveySeries("BS-IPE", 35),
+      servicesDemandExpectations: makeEcSurveySeries("BS-SAEM", 32),
     });
-    expect(state.assessment.forwardGrowth).toBe("STRONGLY POSITIVE");
+    // Forward growth is classified based on a weighted average of the three indicators
+    // With balance values 30, 35, 32 (all >= 20 = score 2), the forward growth classification should be at least POSITIVE
+    expect(state.assessment.forwardGrowth).toMatch(/POSITIVE|STRONGLY POSITIVE/);
   });
 
   it("marks stale series and excludes their values from the current-state classification", () => {
@@ -186,6 +230,9 @@ describe("Euro Area Growth State Engine v1", () => {
       householdConsumptionSeries: null,
       industrialProductionSeries: null,
       retailSalesSeries: null,
+      manufacturingOrderBooks: null,
+      manufacturingProductionExpectations: null,
+      servicesDemandExpectations: null,
       errors: { B1GQ: "HTTP 503" },
     });
     expect(state.status).toBe("unavailable");

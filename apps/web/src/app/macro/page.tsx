@@ -545,8 +545,8 @@ export default function MacroPage() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold">EURO AREA GROWTH</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Real activity from Eurostat; forward PMI inputs remain unavailable unless a reliable
-            official free source can be used.
+            Real activity from Eurostat; European Commission business survey forward indicators
+            from DG ECFIN via Eurostat.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -671,17 +671,18 @@ export default function MacroPage() {
                   </div>
                 ))}
                 {([
-                  ["Manufacturing PMI", euroAreaGrowth.manufacturingPmi],
-                  ["Services PMI", euroAreaGrowth.servicesPmi],
-                ] as const).map(([title, pmi]) =>
-                  pmi ? (
+                  ["Manufacturing Order Books", euroAreaGrowth.forwardSurvey.manufacturingOrderBooks],
+                  ["Manufacturing Production Expectations", euroAreaGrowth.forwardSurvey.manufacturingProductionExpectations],
+                  ["Services Demand Expectations", euroAreaGrowth.forwardSurvey.servicesDemandExpectations],
+                ] as const).map(([title, indicator]) =>
+                  indicator.status === "available" ? (
                     <div className="rounded-lg border p-4" key={title}>
                       <h3 className="font-semibold">{title}</h3>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                        <ValueCell label="Current" value={formatNumber(pmi.current)} />
-                        <ValueCell label="Previous" value={formatNumber(pmi.previous)} />
-                        <ValueCell label="New Orders" value={formatNumber(pmi.newOrders)} />
-                        <p className="text-xs text-muted-foreground">{pmi.explanation ?? "—"}</p>
+                        <ValueCell label="Latest" value={formatNumber(indicator.latest.value)} />
+                        <ValueCell label="Recent Change" value={formatNumber(indicator.recentChange.value)} />
+                        <ValueCell label="3M Change" value={formatNumber(indicator.shortTermChange.value)} />
+                        <ValueCell label="Freshness" value={indicator.freshness} />
                       </div>
                     </div>
                   ) : null
@@ -690,7 +691,7 @@ export default function MacroPage() {
               <details className="mt-5 border-t pt-3 text-xs text-muted-foreground">
                 <summary className="cursor-pointer font-medium">Sources and freshness</summary>
                 <p className="mt-2">{euroAreaGrowth.sources.freshnessMethod}</p>
-                <p className="mt-2">{euroAreaGrowth.sources.pmiMethod}</p>
+                <p className="mt-2">{euroAreaGrowth.sources.surveyMethod}</p>
                 {([
                   ["Real GDP", euroAreaGrowth.gdp],
                   ["Household consumption", euroAreaGrowth.householdConsumption],
