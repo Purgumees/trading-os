@@ -11,13 +11,13 @@ export const EUROSTAT_LABOUR_API_BASE =
  * Labour data series from Eurostat
  * - UNR: Unemployment rate (monthly, %)
  * - EMP: Employment level (annual, thousands of persons, ages 20-64)
+ * - WAGE_GROWTH: Compensation per employee YoY growth (quarterly, %)
  * - JVR: Job vacancy rate - NOT AVAILABLE (no public dataset)
- * - WAGE_GROWTH: Hourly wage/labour cost growth - NOT AVAILABLE (no public dataset)
  * 
- * Note: JVR and WAGE_GROWTH do not have accessible public Eurostat API endpoints
- * as of 2026. Job vacancy data is published by national statistics offices but not
- * aggregated to Euro Area level in real-time. Wage data (LCI) exists but requires
- * different access patterns. These components will be marked unavailable in the engine.
+ * Note: JVR does not have an accessible public Eurostat API endpoint as of 2026.
+ * Job vacancy data is published by national statistics offices but not aggregated
+ * to Euro Area level in real-time. WAGE_GROWTH is now available via the national
+ * accounts compensation per employee series (namq_10_pe).
  */
 export type EurostatLabourSeriesId = "UNR" | "EMP" | "JVR" | "WAGE_GROWTH";
 
@@ -34,7 +34,7 @@ export type EurostatLabourSeries = {
   source: "Eurostat";
   sourceUrl: string;
   geo: "EA21" | "EUR";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER"; // Percentage variants and level
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER"; // Percentage variants, level, and YoY change
   frequency: "M" | "Q" | "A"; // Monthly, Quarterly, or Annual
   filters: Record<string, string>;
   lastUpdated: string | null;
@@ -48,7 +48,7 @@ type SurveyConfig = {
   dataset: string;
   label: string;
   frequency: "M" | "Q" | "A";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER";
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER";
   filters: Record<string, string>;
 };
 
@@ -98,14 +98,21 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
     unit: "PC",
     filters: { geo: "EA21" },
   },
-  // Wage Growth - NOT AVAILABLE (no public Eurostat API dataset)
+  // Wage Growth - Quarterly compensation per employee YoY change
+  // Official source: Eurostat National Accounts
+  // Series D1 (Compensation of Employees) measures wages and salaries
+  // Unit PCH_SM_PER = Year-on-Year % Change (same quarter previous year)
   WAGE_GROWTH: {
     id: "WAGE_GROWTH",
-    dataset: "",
-    label: "Wage / Labour Cost Growth (not available)",
+    dataset: "namq_10_pe",
+    label: "Compensation per Employee (quarterly, YoY % change)",
     frequency: "Q",
-    unit: "PC",
-    filters: { geo: "EA21" },
+    unit: "PCH_SM_PER",
+    filters: {
+      freq: "Q",
+      unit: "PCH_SM_PER",
+      geo: "EA21",
+    },
   },
 };
 

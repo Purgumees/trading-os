@@ -342,8 +342,7 @@ export function calculateEuroAreaLabourState({
     ? buildIndicator("EMP", employmentSeries, errors.EMP ?? null)
     : null;
   
-  // JVR and WAGE_GROWTH are not available from public Eurostat API as of 2026
-  // Create unavailable indicators with explanatory error message
+  // JVR is not available from public Eurostat API as of 2026
   const jobVacancies: EuroAreaLabourIndicator = {
     id: "JVR",
     label: "Job Vacancy Rate",
@@ -369,30 +368,33 @@ export function calculateEuroAreaLabourState({
     error: "No public Eurostat API dataset available for Euro Area job vacancy rate",
   };
 
-  const wageGrowth: EuroAreaLabourIndicator = {
-    id: "WAGE_GROWTH",
-    label: "Wage / Labour Cost Growth",
-    dataset: "",
-    source: "Eurostat",
-    sourceUrl: "",
-    geo: "EA21",
-    unit: "PC",
-    frequency: "Q",
-    freshness: "unavailable",
-    status: "unavailable",
-    latest: { value: null, date: null },
-    previous: { value: null, date: null },
-    previous3m: { value: null, date: null },
-    previous6m: { value: null, date: null },
-    latestChange: { value: null, date: null },
-    threeMonthChange: { value: null, date: null },
-    sixMonthChange: { value: null, date: null },
-    direction3m: "unavailable",
-    direction6m: "unavailable",
-    historyCount: 0,
-    lastUpdated: null,
-    error: "No public Eurostat API dataset available for Euro Area wage/labour cost growth",
-  };
+  // Wage Growth is now available from national accounts compensation per employee data
+  const wageGrowth = wageGrowthSeries
+    ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
+    : {
+        id: "WAGE_GROWTH" as const,
+        label: "Compensation per Employee Growth",
+        dataset: "namq_10_pe",
+        source: "Eurostat" as const,
+        sourceUrl: "",
+        geo: "EA21" as const,
+        unit: "PCH_SM_PER",
+        frequency: "Q" as const,
+        freshness: "unavailable" as const,
+        status: "unavailable" as const,
+        latest: { value: null, date: null },
+        previous: { value: null, date: null },
+        previous3m: { value: null, date: null },
+        previous6m: { value: null, date: null },
+        latestChange: { value: null, date: null },
+        threeMonthChange: { value: null, date: null },
+        sixMonthChange: { value: null, date: null },
+        direction3m: "unavailable" as const,
+        direction6m: "unavailable" as const,
+        historyCount: 0,
+        lastUpdated: null,
+        error: errors.WAGE_GROWTH ?? null,
+      };
 
   // Current Labour State signals
   const stateSignals: Array<Signal | null> = [
@@ -621,7 +623,7 @@ export function calculateEuroAreaLabourState({
     },
     sources: {
       dataMethod:
-        "Unemployment rate (monthly, Eurostat une_rt_m); Employment level (annual, Eurostat lfsa_egan2, ages 20-64). Job vacancy rate and wage growth data are not available from public Eurostat APIs as of 2026.",
+        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Compensation per employee growth (quarterly, Eurostat namq_10_pe, year-on-year % change). Job vacancy rate not available from public Eurostat API as of 2026.",
       freshnessThresholds:
         "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months; Annual data current within 4 months, stale within 15 months.",
     },
