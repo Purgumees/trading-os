@@ -196,8 +196,11 @@ describe("Euro Area Labour State Engine v1", () => {
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
-    expect(state.employment.indicator?.threeMonthChange.value).not.toBeNull();
-    expect(state.employment.indicator?.direction3m).not.toBe("unavailable");
+    // Annual data must never be interpreted as a three- or six-month change.
+    expect(state.employment.indicator?.threeMonthChange.value).toBeNull();
+    expect(state.employment.indicator?.sixMonthChange.value).toBeNull();
+    expect(state.employment.indicator?.direction3m).toBe("unavailable");
+    expect(state.employment.indicator?.direction6m).toBe("unavailable");
   });
 
   it("correctly handles neutral unemployment score (zero value, regression test for falsy-zero bug)", () => {
@@ -215,6 +218,7 @@ describe("Euro Area Labour State Engine v1", () => {
     expect(neutralUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
     // Value should be around 7.0 (test data adds random noise ±0.25 * 24 months with averaging)
     expect(neutralUnempState.unemployment.indicator?.latest.value).toBeDefined();
-    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeCloseTo(7.0, 0.1);
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeGreaterThanOrEqual(6.75);
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeLessThanOrEqual(7.25);
   });
 });
