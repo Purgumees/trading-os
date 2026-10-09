@@ -13,6 +13,7 @@ import type { UsRatesRegimeResult } from "@/lib/us-rates-regime-engine";
 import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
+import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
 
 type Metric = {
   value: number | null;
@@ -154,6 +155,12 @@ type EuroInflationResponse = {
 type EuroGrowthResponse = {
   status: string;
   euroAreaGrowth?: EuroAreaGrowthState;
+  message?: string;
+};
+
+type EuroLabourResponse = {
+  status: string;
+  euroAreaLabour?: EuroAreaLabourState;
   message?: string;
 };
 
@@ -409,6 +416,8 @@ export default function MacroPage() {
   const [euroInflationError, setEuroInflationError] = useState<string | null>(null);
   const [euroAreaGrowth, setEuroAreaGrowth] = useState<EuroAreaGrowthState | null>(null);
   const [euroGrowthError, setEuroGrowthError] = useState<string | null>(null);
+  const [euroAreaLabour, setEuroAreaLabour] = useState<EuroAreaLabourState | null>(null);
+  const [euroLabourError, setEuroLabourError] = useState<string | null>(null);
   const baseCurrency = selectedPair.slice(0, 3);
   const quoteCurrency = selectedPair.slice(3, 6);
 
@@ -494,6 +503,35 @@ export default function MacroPage() {
     }
 
     void loadEuroAreaInflation();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEuroAreaLabour() {
+      try {
+        const response = await fetch("/api/macro/euro-area-labour");
+        const payload = (await response.json()) as EuroLabourResponse;
+        if (!response.ok || !payload.euroAreaLabour) {
+          throw new Error(payload.message ?? "Euro Area labour data is unavailable.");
+        }
+        if (active) {
+          setEuroAreaLabour(payload.euroAreaLabour);
+          setEuroLabourError(null);
+        }
+      } catch (error) {
+        if (active) {
+          setEuroLabourError(
+            error instanceof Error ? error.message : "Euro Area labour data is unavailable."
+          );
+        }
+      }
+    }
+
+    void loadEuroAreaLabour();
     return () => {
       active = false;
     };
@@ -718,6 +756,100 @@ export default function MacroPage() {
           ) : (
             <p className="text-sm text-muted-foreground">
               {euroGrowthError ?? "Loading Euro Area growth data…"}
+            </p>
+          )}
+        </article>
+      </section>
+
+      <section className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">EURO AREA LABOUR STATE</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Labour market assessment using official Eurostat labour indicators.
+          </p>
+        </div>
+        <article className="rounded-xl border p-5">
+          {euroAreaLabour ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Current Labour State
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {euroAreaLabour.assessment.currentLabourState}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Labour Momentum
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {euroAreaLabour.assessment.labourMomentum}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Wage Pressure
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {euroAreaLabour.assessment.wagePressure}
+                  </p>
+                </div>
+              </div>
+              {euroAreaLabour.explanations.map((explanation) => (
+                <p className="mt-2 text-xs text-amber-700" key={explanation}>
+                  {explanation}
+                </p>
+              ))}
+              <div className="mt-5 grid gap-4 xl:grid-cols-2">
+                {([
+                  ["Unemployment", euroAreaLabour.unemployment],
+                  ["Employment", euroAreaLabour.employment],
+                  ["Job Vacancies", euroAreaLabour.jobVacancies],
+                  ["Wage Growth", euroAreaLabour.wageGrowth],
+                ] as const).map(([title, indicator]) =>
+                  indicator.indicator?.status === "available" ? (
+                    <div className="rounded-lg border p-4" key={title}>
+                      <h3 className="font-semibold">{title}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Freshness: {indicator.freshness}
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                        <ValueCell label="Latest" value={formatNumber(indicator.indicator.latest.value)} />
+                        <ValueCell label="Previous" value={formatNumber(indicator.indicator.previous.value)} />
+                        <ValueCell label="3M Change" value={formatNumber(indicator.indicator.threeMonthChange.value)} />
+                        <ValueCell label="Direction" value={indicator.indicator.direction3m} />
+                      </div>
+                    </div>
+                  ) : indicator.error ? (
+                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4" key={title}>
+                      <h3 className="font-semibold">{title}</h3>
+                      <p className="mt-2 text-xs text-yellow-800">{indicator.error}</p>
+                    </div>
+                  ) : null
+                )}
+              </div>
+              <details className="mt-5 border-t pt-3 text-xs text-muted-foreground">
+                <summary className="cursor-pointer font-medium">Sources and freshness</summary>
+                {([
+                  ["Unemployment Rate", euroAreaLabour.unemployment],
+                  ["Employment Rate", euroAreaLabour.employment],
+                  ["Job Vacancy Rate", euroAreaLabour.jobVacancies],
+                  ["Wage Growth", euroAreaLabour.wageGrowth],
+                ] as const).map(([label, item]) => (
+                  <p className="mt-2" key={label}>
+                    {label}: {item.indicator?.dataset ?? "unavailable"} · {item.indicator?.unit ?? "—"} · Eurostat
+                    {" "}{item.indicator?.geo ?? "—"} · observed{" "}
+                    {item.indicator?.latest.date ?? "—"} · freshness {item.freshness}
+                    {item.error && ` · Error: ${item.error}`}
+                  </p>
+                ))}
+              </details>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {euroLabourError ?? "Loading Euro Area labour data…"}
             </p>
           )}
         </article>
