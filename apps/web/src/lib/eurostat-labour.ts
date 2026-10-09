@@ -19,10 +19,10 @@ export const EUROSTAT_LABOUR_API_BASE =
  * 
  * - JVR: Job vacancy rate (quarterly, %)
  *   Dataset: jvs_q_nace2, Unit: PC, Frequency: Quarterly, S_Adj: NSA
- *   Euro Area aggregate: NACE_R2=TOTAL (total of all activities)
+ *   Euro Area aggregate: NACE_R2=TOTAL (verify actual dataset categories)
  * 
  * - WAGE_GROWTH: Labour Cost Index quarterly growth (%)
- *   Dataset: lc_lci_r2_q, Unit: PCH_PP_13, Frequency: Quarterly, S_Adj: CA
+ *   Dataset: lc_lci_r2_q, Unit: PCH_SM, Frequency: Quarterly, S_Adj: CA
  *   Represents YoY % change in hourly labour cost across all activities
  *   NOTE: This is a cost index, not a wage series. Reflects total compensation including non-wage benefits.
  */
@@ -41,7 +41,7 @@ export type EurostatLabourSeries = {
   source: "Eurostat";
   sourceUrl: string;
   geo: "EA21" | "EUR";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13"; // Percentage variants, level, YoY change, and percentage point change
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_SM"; // Percentage variants, level, YoY change, and percentage point change
   frequency: "M" | "Q" | "A"; // Monthly, Quarterly, or Annual
   filters: Record<string, string>;
   lastUpdated: string | null;
@@ -55,7 +55,7 @@ type SurveyConfig = {
   dataset: string;
   label: string;
   frequency: "M" | "Q" | "A";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13";
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_SM";
   filters: Record<string, string>;
 };
 
@@ -123,23 +123,24 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
 
   // Labour Cost Index - Quarterly growth
   // Dataset: lc_lci_r2_q (Labour Cost Index by NACE Rev. 2 activity - quarterly)
-  // Unit: PCH_PP_13 (% change, percentage points change in previous period)
-  // Represents YoY % change in nominal hourly labour cost (wages + non-wage costs)
+  // Unit: PCH_SM (percentage change compared with the same quarter a year earlier)
+  // Represents YoY % change in nominal hourly wages and salaries (lcstruct=D11)
   // Frequency: Q (quarterly), Calendar Adjusted
-  // Geography: EA21 (Euro area aggregate, NACE_R2=TOTAL)
-  // IMPORTANT: This is an index-based measure, not actual wage growth.
-  // It reflects compensation cost changes including social contributions.
+  // Geography: EA21 (Euro area aggregate, NACE_R2=B-S)
+  // IMPORTANT: This is a wages-and-salaries hourly cost index, not pay per employee.
+  // Employer social contributions are excluded by lcstruct=D11.
   WAGE_GROWTH: {
     id: "WAGE_GROWTH",
     dataset: "lc_lci_r2_q",
-    label: "Labour Cost Index (quarterly, YoY % change)",
+    label: "Wages and salaries hourly cost growth (quarterly, YoY %)",
     frequency: "Q",
-    unit: "PCH_PP_13",
+    unit: "PCH_SM",
     filters: {
       freq: "Q",
       s_adj: "CA",
-      nace_r2: "TOTAL",
-      unit: "PCH_PP_13",
+      nace_r2: "B-S",
+      lcstruct: "D11",
+      unit: "PCH_SM",
       geo: "EA21",
     },
   },
@@ -252,7 +253,7 @@ export async function fetchEurostatLabourSeries(
           if (dimCategories.length > 0) {
             // Use the requested filter value if it exists, otherwise use first category
             const requestedValue = (requestedFilters as Record<string, string>)[dimId];
-            const chosenValue = requestedValue || dimCategories[0]!;
+            // Never silently substitute a different indicator/geography if a requested code is absent.\n            if (requestedValue && !dimCategories.includes(requestedValue)) {\n              throw new Error(`Missing requested Eurostat dimension ${dimId}=${requestedValue}`);\n            }\n            if (!requestedValue && dimCategories.length !== 1) {\n              throw new Error(`Ambiguous Eurostat dimension ${dimId}: ${dimCategories.join(", ")}`);\n            }\n            const chosenValue = requestedValue ?? dimCategories[0]!;
             coordinate[dimId] = chosenValue;
           }
         }
