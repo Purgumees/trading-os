@@ -399,12 +399,12 @@ export function calculateEuroAreaLabourState({
     ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
     : {
         id: "WAGE_GROWTH" as const,
-        label: "Labour Cost Index (quarterly, YoY % change)",
+        label: "Wages and salaries hourly cost growth (quarterly, YoY %)",
         dataset: "lc_lci_r2_q",
         source: "Eurostat" as const,
         sourceUrl: "",
         geo: "EA21" as const,
-        unit: "PCH_PP_13",
+        unit: "PCH_SM",
         frequency: "Q" as const,
         freshness: "unavailable" as const,
         status: "unavailable" as const,
@@ -650,7 +650,7 @@ export function calculateEuroAreaLabourState({
     },
     sources: {
       dataMethod:
-        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Compensation per employee growth (quarterly, Eurostat namq_10_pe, year-on-year % change). Job vacancy rate not available from public Eurostat API as of 2026.",
+        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Hourly wages and salaries cost growth (quarterly, Eurostat lc_lci_r2_q, D11, PCH_SM); job vacancy rate (quarterly, Eurostat jvs_q_nace2, JVR).",
       freshnessThresholds:
         "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months; Annual data current within 4 months, stale within 15 months.",
     },
