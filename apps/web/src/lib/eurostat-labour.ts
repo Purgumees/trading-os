@@ -246,7 +246,14 @@ export async function fetchEurostatLabourSeries(
           if (dimCategories.length > 0) {
             // Use the requested filter value if it exists, otherwise use first category
             const requestedValue = (requestedFilters as Record<string, string>)[dimId];
-            // Never silently substitute a different indicator/geography if a requested code is absent.\n            if (requestedValue && !dimCategories.includes(requestedValue)) {\n              throw new Error(`Missing requested Eurostat dimension ${dimId}=${requestedValue}`);\n            }\n            if (!requestedValue && dimCategories.length !== 1) {\n              throw new Error(`Ambiguous Eurostat dimension ${dimId}: ${dimCategories.join(", ")}`);\n            }\n            const chosenValue = requestedValue ?? dimCategories[0]!;
+            // Never silently substitute a different indicator/geography if a requested code is absent.
+            if (requestedValue && !dimCategories.includes(requestedValue)) {
+              throw new Error(`Missing requested Eurostat dimension ${dimId}=${requestedValue}`);
+            }
+            if (!requestedValue && dimCategories.length !== 1) {
+              throw new Error(`Ambiguous Eurostat dimension ${dimId}: ${dimCategories.join(", ")}`);
+            }
+            const chosenValue = requestedValue ?? dimCategories[0]!;
             coordinate[dimId] = chosenValue;
           }
         }
