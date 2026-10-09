@@ -621,9 +621,9 @@ export function calculateEuroAreaLabourState({
     },
     sources: {
       dataMethod:
-        "Unemployment rate (monthly, Eurostat LFSA); Employment rate (quarterly, LFSA); Job vacancy rate (quarterly, JVST); Hourly wage growth (quarterly, EARN).",
+        "Unemployment rate (monthly, Eurostat une_rt_m); Employment level (annual, Eurostat lfsa_egan2, ages 20-64). Job vacancy rate and wage growth data are not available from public Eurostat APIs as of 2026.",
       freshnessThresholds:
-        "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months.",
+        "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months; Annual data current within 4 months, stale within 15 months.",
     },
     explanations,
   };

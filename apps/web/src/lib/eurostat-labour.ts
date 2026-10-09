@@ -10,7 +10,7 @@ export const EUROSTAT_LABOUR_API_BASE =
 /**
  * Labour data series from Eurostat
  * - UNR: Unemployment rate (monthly, %)
- * - EMP: Employment rate (annual, %)
+ * - EMP: Employment level (annual, thousands of persons, ages 20-64)
  * - JVR: Job vacancy rate - NOT AVAILABLE (no public dataset)
  * - WAGE_GROWTH: Hourly wage/labour cost growth - NOT AVAILABLE (no public dataset)
  * 
@@ -34,7 +34,7 @@ export type EurostatLabourSeries = {
   source: "Eurostat";
   sourceUrl: string;
   geo: "EA21" | "EUR";
-  unit: "PC" | "PC_POP" | "PC_STOCK"; // Percentage variants
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER"; // Percentage variants and level
   frequency: "M" | "Q" | "A"; // Monthly, Quarterly, or Annual
   filters: Record<string, string>;
   lastUpdated: string | null;
@@ -48,29 +48,46 @@ type SurveyConfig = {
   dataset: string;
   label: string;
   frequency: "M" | "Q" | "A";
-  unit: "PC" | "PC_POP" | "PC_STOCK";
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER";
   filters: Record<string, string>;
 };
 
 const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
   // Unemployment Rate - Monthly, Eurostat UNE series (une_rt_m)
-  // Filters for total, both sexes, all age groups
+  // CRITICAL: Specify unit=PC_ACT to get percentage (not THS_PER = thousand persons)
+  // Unit must be: PC_ACT (Percentage of population in the labour force)
   UNR: {
     id: "UNR",
     dataset: "une_rt_m",
-    label: "Unemployment Rate (monthly, seasonally adjusted)",
+    label: "Unemployment Rate (monthly, seasonally adjusted, %)",
     frequency: "M",
-    unit: "PC",
-    filters: { freq: "M", s_adj: "SA", age: "TOTAL", sex: "T", geo: "EA21" },
+    unit: "PC_ACT",
+    filters: {
+      freq: "M",
+      s_adj: "SA",
+      age: "TOTAL",
+      sex: "T",
+      unit: "PC_ACT",
+      geo: "EA21",
+    },
   },
-  // Employment Rate - Annual, Eurostat LFSA series (lfsa_egan2)
+  // Employment Level - Annual, Eurostat LFSA series (lfsa_egan2)
+  // Unit is THS_PER (Thousand Persons), representing employed persons aged 20-64
+  // Do NOT interpret this as an employment rate - it's an absolute level
+  // Engine will calculate YoY growth rates from this level data
   EMP: {
     id: "EMP",
     dataset: "lfsa_egan2",
-    label: "Employment Rate (annual)",
+    label: "Employment Level (ages 20-64, annual, thousands of persons)",
     frequency: "A",
-    unit: "PC",
-    filters: { freq: "A", sex: "T", age: "Y20-64", geo: "EA21" },
+    unit: "THS_PER",
+    filters: {
+      freq: "A",
+      sex: "T",
+      age: "Y20-64",
+      nace_r2: "TOTAL",
+      geo: "EA21",
+    },
   },
   // Job Vacancy Rate - NOT AVAILABLE (no public Eurostat API dataset)
   JVR: {
@@ -227,7 +244,23 @@ export async function fetchEurostatLabourSeries(
     }
 
     const latestDate = observations[observations.length - 1]!.date;
-    const latestObsDate = new Date(latestDate + "-01");
+    
+    // Handle different date formats: YYYY (annual), YYYY-MM (monthly), YYYY-Qx (quarterly)
+    let latestObsDate: Date;
+    if (config.frequency === "A") {
+      // Annual: treat as end of year (Dec 31)
+      latestObsDate = new Date(`${latestDate}-12-31T23:59:59Z`);
+    } else if (config.frequency === "Q") {
+      // Quarterly: parse Qx to month (Q1=01, Q2=04, Q3=07, Q4=10)
+      const [year, quarter] = latestDate.split("-");
+      const quarterNum = parseInt(quarter!.replace("Q", ""));
+      const month = String((quarterNum - 1) * 3 + 1).padStart(2, "0");
+      latestObsDate = new Date(`${year}-${month}-01T00:00:00Z`);
+    } else {
+      // Monthly: YYYY-MM format
+      latestObsDate = new Date(`${latestDate}-01T00:00:00Z`);
+    }
+    
     const asOfDateObj = new Date(asOfDate + "T00:00:00Z");
     const monthsDiff = Math.round(
       (asOfDateObj.getTime() - latestObsDate.getTime()) /
@@ -235,11 +268,26 @@ export async function fetchEurostatLabourSeries(
     );
 
     const freshness: "current" | "stale" | "unavailable" =
-      monthsDiff <= (config.frequency === "M" ? 1 : 2)
-        ? "current"
-        : monthsDiff <= (config.frequency === "M" ? 3 : 6)
-          ? "stale"
-          : "unavailable";
+      config.frequency === "A"
+        ? // Annual data: current if <= 4 months, stale if <= 15 months, unavailable if > 15 months
+          monthsDiff <= 4
+          ? "current"
+          : monthsDiff <= 15
+            ? "stale"
+            : "unavailable"
+        : config.frequency === "Q"
+          ? // Quarterly data: current if <= 2 months, stale if <= 6 months
+            monthsDiff <= 2
+            ? "current"
+            : monthsDiff <= 6
+              ? "stale"
+              : "unavailable"
+          : // Monthly data: current if <= 1 month, stale if <= 3 months
+            monthsDiff <= 1
+            ? "current"
+            : monthsDiff <= 3
+              ? "stale"
+              : "unavailable";
 
     return {
       id: seriesId,
