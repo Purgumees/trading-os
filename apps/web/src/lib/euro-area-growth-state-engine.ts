@@ -79,6 +79,7 @@ export type EuroAreaGrowthState = {
     previousQuarter: Metric;
     series: EurostatGrowthSeries | null;
     error: string | null;
+    rawObservations: EurostatGrowthObservation[];
   };
   householdConsumption: {
     freshness: "current" | "stale" | "unavailable";
@@ -91,6 +92,7 @@ export type EuroAreaGrowthState = {
     previousQuarter: Metric;
     series: EurostatGrowthSeries | null;
     error: string | null;
+    rawObservations: EurostatGrowthObservation[];
   };
   industrialProduction: MonthlyActivity;
   retailSales: MonthlyActivity;
@@ -120,6 +122,7 @@ type MonthlyActivity = {
   direction6m: TrendDirection;
   series: EurostatGrowthSeries | null;
   error: string | null;
+  rawObservations: EurostatGrowthObservation[];
 };
 
 const CURRENT_STATE_WEIGHTS = {
@@ -211,6 +214,7 @@ function monthlyMetrics(series: EurostatGrowthSeries | null): Omit<
     mediumTermChange: metric(mediumTermChange, date),
     direction3m: trendDirection(shortTermChange, 0.15),
     direction6m: trendDirection(mediumTermChange, 0.3),
+    rawObservations: series?.observations ?? [],
   };
 }
 
@@ -707,24 +711,28 @@ export function calculateEuroAreaGrowthState({
       ...gdpMetrics,
       series: gdpSeries,
       error: errors.B1GQ ?? null,
+      rawObservations: gdpSeries?.observations ?? [],
     },
     householdConsumption: {
       freshness: consumptionFreshness,
       ...consumptionMetrics,
       series: householdConsumptionSeries,
       error: errors.P31_S14_S15 ?? null,
+      rawObservations: householdConsumptionSeries?.observations ?? [],
     },
     industrialProduction: {
       freshness: industryFreshness,
       ...industryMetrics,
       series: industrialProductionSeries,
       error: errors.INDUSTRIAL_PRODUCTION ?? null,
+      rawObservations: industrialProductionSeries?.observations ?? [],
     },
     retailSales: {
       freshness: retailFreshness,
       ...retailMetrics,
       series: retailSalesSeries,
       error: errors.RETAIL_VOLUME ?? null,
+      rawObservations: retailSalesSeries?.observations ?? [],
     },
     forwardSurvey: {
       manufacturingOrderBooks: orderBooks,

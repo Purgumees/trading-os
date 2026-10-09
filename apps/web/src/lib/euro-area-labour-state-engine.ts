@@ -181,7 +181,9 @@ function thresholdScore(
 
 function unemploymentScore(value: number | null): number | null {
   // Inverse: lower unemployment is better
-  return thresholdScore(
+  // BUG FIX: Explicitly check for null instead of relying on truthiness,
+  // which would treat score=0 (neutral) as falsy and return null instead of 0
+  const score = thresholdScore(
     value,
     [
       LABOUR_THRESHOLDS.state.unemploymentRate.veryLow,
@@ -189,19 +191,8 @@ function unemploymentScore(value: number | null): number | null {
       LABOUR_THRESHOLDS.state.unemploymentRate.neutral,
       LABOUR_THRESHOLDS.state.unemploymentRate.elevated,
     ]
-  )
-    ? -(
-        thresholdScore(
-          value,
-          [
-            LABOUR_THRESHOLDS.state.unemploymentRate.veryLow,
-            LABOUR_THRESHOLDS.state.unemploymentRate.low,
-            LABOUR_THRESHOLDS.state.unemploymentRate.neutral,
-            LABOUR_THRESHOLDS.state.unemploymentRate.elevated,
-          ]
-        ) ?? 0
-      )
-    : null;
+  );
+  return score !== null ? -score : null;
 }
 
 function trendScore(change: number | null): number | null {
@@ -368,21 +359,23 @@ export function calculateEuroAreaLabourState({
     direction6m: "unavailable",
     historyCount: 0,
     lastUpdated: null,
-    error: "No public Eurostat API dataset available for Euro Area job vacancy rate",
+    error: "Job Vacancy Rate not available from public Eurostat dissemination API as of 2026. Search 'jvs_q' or 'jvs' in Eurostat database for potential future availability.",
     rawObservations: [],
   };
 
-  // Wage Growth is now available from national accounts compensation per employee data
+  // Wage Growth is not available from public Eurostat API as of 2026
+  // Structure of Earnings Survey (SES) is annual and discontinued; national accounts
+  // compensation per employee dataset is not in dissemination API
   const wageGrowth = wageGrowthSeries
     ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
     : {
         id: "WAGE_GROWTH" as const,
-        label: "Compensation per Employee Growth",
-        dataset: "namq_10_pe",
+        label: "Wage Growth / Compensation per Employee",
+        dataset: "",
         source: "Eurostat" as const,
         sourceUrl: "",
         geo: "EA21" as const,
-        unit: "PCH_SM_PER",
+        unit: "PC",
         frequency: "Q" as const,
         freshness: "unavailable" as const,
         status: "unavailable" as const,

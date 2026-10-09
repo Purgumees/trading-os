@@ -11,13 +11,14 @@ export const EUROSTAT_LABOUR_API_BASE =
  * Labour data series from Eurostat
  * - UNR: Unemployment rate (monthly, %)
  * - EMP: Employment level (annual, thousands of persons, ages 20-64)
- * - WAGE_GROWTH: Compensation per employee YoY growth (quarterly, %)
- * - JVR: Job vacancy rate - NOT AVAILABLE (no public dataset)
+ * - WAGE_GROWTH: NOT AVAILABLE - No official quarterly wage/compensation growth series available
+ *   through public Eurostat dissemination API as of 2026. Structure of Earnings Survey (SES) 
+ *   is annual and discontinuous. National accounts compensation per employee is unavailable.
+ * - JVR: Job vacancy rate - NOT AVAILABLE (no public Eurostat API access as of 2026)
  * 
  * Note: JVR does not have an accessible public Eurostat API endpoint as of 2026.
- * Job vacancy data is published by national statistics offices but not aggregated
- * to Euro Area level in real-time. WAGE_GROWTH is now available via the national
- * accounts compensation per employee series (namq_10_pe).
+ * Job vacancy data may be available from national statistics offices but not aggregated
+ * to Euro Area level in the official Eurostat dissemination API.
  */
 export type EurostatLabourSeriesId = "UNR" | "EMP" | "JVR" | "WAGE_GROWTH";
 
@@ -93,26 +94,21 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
   JVR: {
     id: "JVR",
     dataset: "",
-    label: "Job Vacancy Rate (not available)",
+    label: "Job Vacancy Rate (not available from public Eurostat API)",
     frequency: "Q",
     unit: "PC",
     filters: { geo: "EA21" },
   },
-  // Wage Growth - Quarterly compensation per employee YoY change
-  // Official source: Eurostat National Accounts
-  // Series D1 (Compensation of Employees) measures wages and salaries
-  // Unit PCH_SM_PER = Year-on-Year % Change (same quarter previous year)
+  // Wage Growth - NOT AVAILABLE from public Eurostat dissemination API as of 2026
+  // Structure of Earnings Survey (earn_ses_pub1s) is annual-only and discontinued data
+  // National accounts compensation per employee dataset is not publicly available
   WAGE_GROWTH: {
     id: "WAGE_GROWTH",
-    dataset: "namq_10_pe",
-    label: "Compensation per Employee (quarterly, YoY % change)",
+    dataset: "",
+    label: "Wage / Compensation Growth (not available)",
     frequency: "Q",
-    unit: "PCH_SM_PER",
-    filters: {
-      freq: "Q",
-      unit: "PCH_SM_PER",
-      geo: "EA21",
-    },
+    unit: "PC",
+    filters: { geo: "EA21" },
   },
 };
 

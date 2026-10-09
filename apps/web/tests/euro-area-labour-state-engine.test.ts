@@ -199,4 +199,22 @@ describe("Euro Area Labour State Engine v1", () => {
     expect(state.employment.indicator?.threeMonthChange.value).not.toBeNull();
     expect(state.employment.indicator?.direction3m).not.toBe("unavailable");
   });
+
+  it("correctly handles neutral unemployment score (zero value, regression test for falsy-zero bug)", () => {
+    // Regression test for bug where score=0 was treated as falsy, returning null instead of 0
+    // Neutral unemployment rate is 7.0% (LABOUR_THRESHOLDS.state.unemploymentRate.neutral)
+    // This should result in unemploymentScore returning 0 (neutral), not null
+    const neutralUnempState = calculateEuroAreaLabourState({
+      unemploymentSeries: makeMonthlySeries("UNR", 7.0),
+      employmentSeries: null,
+      jobVacanciesSeries: null,
+      wageGrowthSeries: null,
+    });
+    // Neutral unemployment should produce a valid classification (not UNAVAILABLE)
+    // and the labour state should be calculated correctly, not defaulted to UNAVAILABLE due to null score
+    expect(neutralUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
+    // Value should be close to 7.0 (test data adds small random noise)
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeDefined();
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeCloseTo(7.0, 0.5);
+  });
 });

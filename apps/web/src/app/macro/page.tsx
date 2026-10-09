@@ -14,12 +14,13 @@ import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
 import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
-import { HistoricalDataDisplay } from "@/components/HistoricalDataDisplay";
-import { HistoricalIndicatorGrid } from "@/components/HistoricalIndicatorGrid";
+import { HistoricalTable } from "@/components/HistoricalTable";
 import {
-  transformHicpToHistoricalDisplay,
-  transformLabourToHistoricalDisplay,
-} from "@/lib/historical-data-utils";
+  getLatestObservations,
+  getFrequencyDisplayLimit,
+  formatMetricValue,
+  calculateChange,
+} from "@/lib/historical-display-utils";
 
 type Metric = {
   value: number | null;
@@ -661,6 +662,20 @@ export default function MacroPage() {
                       detail={euroAreaGrowth.gdp.previousQuarter.date ?? "—"}
                     />
                   </div>
+                  {euroAreaGrowth.gdp.rawObservations && euroAreaGrowth.gdp.rawObservations.length > 0 && (
+                    <HistoricalTable
+                      title="Latest 6 quarters"
+                      columns={[
+                        { key: "date", label: "Quarter", align: "left" },
+                        { key: "value", label: "Level (millions €)", align: "right", format: (v) => formatNumber(v, 0) },
+                      ]}
+                      rows={getLatestObservations(euroAreaGrowth.gdp.rawObservations, 6).map((obs) => ({
+                        date: obs.date,
+                        value: obs.value,
+                      }))}
+                      compact={true}
+                    />
+                  )}
                 </div>
                 <div className="rounded-lg border p-4">
                   <h3 className="font-semibold">Household / Private Consumption (Real)</h3>
@@ -684,6 +699,20 @@ export default function MacroPage() {
                       value={formatPercent(euroAreaGrowth.householdConsumption.latest.yoy.value)}
                     />
                   </div>
+                  {euroAreaGrowth.householdConsumption.rawObservations && euroAreaGrowth.householdConsumption.rawObservations.length > 0 && (
+                    <HistoricalTable
+                      title="Latest 6 quarters"
+                      columns={[
+                        { key: "date", label: "Quarter", align: "left" },
+                        { key: "value", label: "Level (millions €)", align: "right", format: (v) => formatNumber(v, 0) },
+                      ]}
+                      rows={getLatestObservations(euroAreaGrowth.householdConsumption.rawObservations, 6).map((obs) => ({
+                        date: obs.date,
+                        value: obs.value,
+                      }))}
+                      compact={true}
+                    />
+                  )}
                 </div>
                 {([
                   ["Industrial Production", euroAreaGrowth.industrialProduction],
@@ -712,6 +741,20 @@ export default function MacroPage() {
                         detail={`Direction: ${activity.direction6m}`}
                       />
                     </div>
+                    {activity.rawObservations && activity.rawObservations.length > 0 && (
+                      <HistoricalTable
+                        title="Latest 6 months"
+                        columns={[
+                          { key: "date", label: "Month", align: "left" },
+                          { key: "value", label: "Index", align: "right", format: (v) => formatNumber(v, 1) },
+                        ]}
+                        rows={getLatestObservations(activity.rawObservations, 6).map((obs) => ({
+                          date: obs.date,
+                          value: obs.value,
+                        }))}
+                        compact={true}
+                      />
+                    )}
                   </div>
                 ))}
                 {([
@@ -810,16 +853,20 @@ export default function MacroPage() {
               ))}
               <div className="mt-5 grid gap-4 xl:grid-cols-2">
                 {([
-                  ["Unemployment", euroAreaLabour.unemployment],
-                  ["Employment", euroAreaLabour.employment],
-                  ["Job Vacancies", euroAreaLabour.jobVacancies],
-                  ["Wage Growth", euroAreaLabour.wageGrowth],
-                ] as const).map(([title, indicator]) =>
+                  ["Unemployment", euroAreaLabour.unemployment, "M"],
+                  ["Employment", euroAreaLabour.employment, "A"],
+                  ["Job Vacancies", euroAreaLabour.jobVacancies, "Q"],
+                  ["Wage Growth", euroAreaLabour.wageGrowth, "Q"],
+                ] as const).map(([title, indicator, frequency]) =>
                   indicator.indicator?.status === "available" ? (
                     <div className="rounded-lg border p-4" key={title}>
                       <h3 className="font-semibold">{title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Freshness: {indicator.freshness}
+                        Freshness: {indicator.freshness} · {indicator.indicator.frequency === "M"
+                          ? "Monthly"
+                          : indicator.indicator.frequency === "Q"
+                            ? "Quarterly"
+                            : "Annual"}
                       </p>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                         <ValueCell label="Latest" value={formatNumber(indicator.indicator.latest.value)} />
@@ -827,6 +874,33 @@ export default function MacroPage() {
                         <ValueCell label="3M Change" value={formatNumber(indicator.indicator.threeMonthChange.value)} />
                         <ValueCell label="Direction" value={indicator.indicator.direction3m} />
                       </div>
+
+                      {/* Historical data table */}
+                      {indicator.indicator.rawObservations &&
+                        indicator.indicator.rawObservations.length > 0 && (
+                          <HistoricalTable
+                            title={`${title} — Latest ${getFrequencyDisplayLimit(indicator.indicator.frequency as "M" | "Q" | "A")} observations`}
+                            columns={[
+                              {
+                                key: "date",
+                                label: frequency === "A" ? "Year" : frequency === "Q" ? "Quarter" : "Month",
+                                align: "left",
+                              },
+                              {
+                                key: "value",
+                                label: `Value (${indicator.indicator.unit})`,
+                                align: "right",
+                                format: (v) =>
+                                  formatMetricValue(v, indicator.indicator?.unit === "PC" || indicator.indicator?.unit === "PC_ACT" ? 2 : 1),
+                              },
+                            ]}
+                            rows={getLatestObservations(indicator.indicator.rawObservations, getFrequencyDisplayLimit(indicator.indicator.frequency as "M" | "Q" | "A")).map((obs) => ({
+                              date: obs.date,
+                              value: obs.value,
+                            }))}
+                            compact={true}
+                          />
+                        )}
                     </div>
                   ) : indicator.error ? (
                     <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4" key={title}>
@@ -1726,83 +1800,6 @@ export default function MacroPage() {
         </article>
       </section>
 
-      {/* HISTORICAL DATA DISPLAY SECTION */}
-      <section className="mb-8">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Historical Data Display</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Complete historical observations with freshness tracking and trend analysis.
-          </p>
-        </div>
-
-        {/* Euro Area Historical Indicators */}
-        {euroAreaInflation && (
-          <div className="mb-8">
-            <h3 className="mb-4 text-base font-semibold text-gray-200">Euro Area Inflation (Eurostat HICP)</h3>
-            <div className="grid gap-4 lg:grid-cols-2">
-              {["Headline HICP", "Core HICP"].map((label, idx) => {
-                const series = idx === 0 ? euroAreaInflation.headline : euroAreaInflation.core;
-                const displayProps = transformHicpToHistoricalDisplay(series);
-                return (
-                  <HistoricalDataDisplay
-                    key={label}
-                    {...displayProps}
-                    label={label}
-                    observations={displayProps.observations.slice(0, 6)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Euro Area Labour Historical Indicators */}
-        {euroAreaLabour && (
-          <div>
-            <h3 className="mb-4 text-base font-semibold text-gray-200">Euro Area Labour (Eurostat & ECB)</h3>
-            <div className="grid gap-4 lg:grid-cols-2">
-              {euroAreaLabour.unemployment?.indicator && (
-                <HistoricalDataDisplay
-                  key="unemployment"
-                  {...transformLabourToHistoricalDisplay(euroAreaLabour.unemployment.indicator, "Unemployment Rate (%)")}
-                  observations={transformLabourToHistoricalDisplay(
-                    euroAreaLabour.unemployment.indicator,
-                    "Unemployment Rate (%)"
-                  ).observations.slice(0, 6)}
-                />
-              )}
-              {euroAreaLabour.employment?.indicator && (
-                <HistoricalDataDisplay
-                  key="employment"
-                  {...transformLabourToHistoricalDisplay(
-                    euroAreaLabour.employment.indicator,
-                    "Employment Level (thousands of persons)"
-                  )}
-                  observations={transformLabourToHistoricalDisplay(
-                    euroAreaLabour.employment.indicator,
-                    "Employment Level (thousands of persons)"
-                  ).observations.slice(0, 5)}
-                />
-              )}
-              {euroAreaLabour.wageGrowth?.indicator && (
-                <HistoricalDataDisplay
-                  key="wage-growth"
-                  {...transformLabourToHistoricalDisplay(euroAreaLabour.wageGrowth.indicator, "Wage Growth (YoY % change)")}
-                  observations={transformLabourToHistoricalDisplay(
-                    euroAreaLabour.wageGrowth.indicator,
-                    "Wage Growth (YoY % change)"
-                  ).observations.slice(0, 6)}
-                />
-              )}
-              {!euroAreaLabour.employment?.indicator &&
-                !euroAreaLabour.wageGrowth?.indicator &&
-                !euroAreaLabour.jobVacancies?.indicator && (
-                  <p className="col-span-full text-sm text-gray-400">Limited labour indicator availability</p>
-                )}
-            </div>
-          </div>
-        )}
-      </section>
 
       <section className="mb-8">
         <div className="mb-4">
