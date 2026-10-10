@@ -21,7 +21,7 @@ jobs:
           datasets = {
               "UNR": ("une_rt_m", {"freq":"M","s_adj":"SA","age":"TOTAL","sex":"T","unit":"PC_ACT","geo":"EA21"}),
               "EMP": ("lfsa_egan2", {"freq":"A","sex":"T","age":"Y20-64","nace_r2":"TOTAL","geo":"EA21"}),
-              "JVR": ("jvs_q_nace2", {"freq":"Q","s_adj":"NSA","nace_r2":"TOTAL","geo":"EA21"}),
+              "JVR": ("jvs_q_nace2", {"freq":"Q","s_adj":"NSA","nace_r2":"B-S","geo":"EA21"}),
               "WAGE_GROWTH": ("lc_lci_r2_q", {"freq":"Q","s_adj":"CA","nace_r2":"B-S","lcstruct":"D11","unit":"PCH_SM","geo":"EA21"}),
           }
           failed = []
