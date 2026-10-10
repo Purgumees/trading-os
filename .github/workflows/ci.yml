@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/euro-labour-frequency-safety]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   quality:
