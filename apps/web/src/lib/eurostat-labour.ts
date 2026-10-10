@@ -18,8 +18,8 @@ export const EUROSTAT_LABOUR_API_BASE =
  *   CRITICAL: Annual frequency means only YoY changes are valid. Do NOT use for 3M/6M momentum.
  * 
  * - JVR: Job vacancy rate (quarterly, %)
- *   Dataset: jvs_q_nace2, Unit: PC, Frequency: Quarterly, S_Adj: NSA
- *   Euro Area aggregate: NACE_R2=B-S; explicitly request job vacancy rate unit PC
+ *   Dataset: jvs_q_r21, Indicator: JVR, Frequency: Quarterly, S_Adj: SA
+ *   Euro Area aggregate: NACE_R2_1=B-T; request indic_em=JVR and sizeclas=TOTAL
  * 
  * - WAGE_GROWTH: Labour Cost Index quarterly growth (%)
  *   Dataset: lc_lci_r2_q, Unit: PCH_SM, Frequency: Quarterly, S_Adj: CA
@@ -103,21 +103,22 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
   },
 
   // Job Vacancy Rate - Quarterly, Eurostat JVS
-  // Dataset: jvs_q_nace2 (Job Vacancy Statistics by NACE Rev. 2 activity)
+  // Dataset: jvs_q_r21 (Job Vacancy Statistics by NACE Rev. 2.1 activity)
   // Unit: PC (percentage of total posts)
   // Frequency: Q (quarterly), Not Seasonally Adjusted
-  // Geography: EA21 (Euro area aggregate, NACE_R2=TOTAL means all activities)
+  // Geography: EA21 (Euro area aggregate, NACE_R2_1=B-T)
   JVR: {
     id: "JVR",
-    dataset: "jvs_q_nace2",
+    dataset: "jvs_q_r21",
     label: "Job Vacancy Rate (quarterly, %)",
     frequency: "Q",
     unit: "PC",
     filters: {
       freq: "Q",
-      s_adj: "NSA",
-      unit: "PC",
-      nace_r2: "B-S",
+      s_adj: "SA",
+      indic_em: "JVR",
+      sizeclas: "TOTAL",
+      nace_r2_1: "B-T",
       geo: "EA21",
     },
   },
