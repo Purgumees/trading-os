@@ -1808,7 +1808,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">Growth</h2>
+          <h2 className="text-lg font-semibold">USA — GDP & ECONOMIC GROWTH</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Economic activity, spending, production, and business surveys.
           </p>
@@ -2041,7 +2041,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">Inflation</h2>
+          <h2 className="text-lg font-semibold">USA — CPI & PCE INFLATION</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Current price levels, inflation momentum, and survey-based forward price pressure.
           </p>
@@ -2189,7 +2189,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">Labour Market</h2>
+          <h2 className="text-lg font-semibold">USA — LABOUR MARKET</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Employment, wages, layoffs, and job openings.
           </p>
