@@ -454,9 +454,9 @@ export function calculateEuroAreaLabourState({
           label: "Job vacancy rate",
         }
       : null,
-    employment && employment.threeMonthChange.value !== null
+    employment && employment.latestChange.value !== null
       ? {
-          score: trendScore(employment.threeMonthChange.value) ?? 0,
+          score: trendScore(employment.latestChange.value === null ? null : employment.latestChange.value / Math.max(1, employment.previous.value ?? 1) * 100) ?? 0,
           weight: LABOUR_WEIGHTS.state.employmentGrowth,
           label: "Employment growth",
         }
@@ -467,8 +467,9 @@ export function calculateEuroAreaLabourState({
     stateSignals.filter((s): s is Signal => s !== null)
   );
 
+  const incompleteLabourData = !unemploymentSeries || !employmentSeries || !jobVacanciesSeries || !wageGrowthSeries;
   const currentLabourState: EuroLabourState =
-    stateScore === null
+    incompleteLabourData || stateScore === null
       ? "UNAVAILABLE"
       : stateScore >= LABOUR_THRESHOLDS.state.veryStrong
         ? "VERY STRONG"
@@ -496,9 +497,9 @@ export function calculateEuroAreaLabourState({
           label: "Job vacancy trend",
         }
       : null,
-    employment && employment.sixMonthChange.value !== null
+    employment && employment.latestChange.value !== null
       ? {
-          score: trendScore(employment.sixMonthChange.value) ?? 0,
+          score: trendScore(employment.latestChange.value === null ? null : employment.latestChange.value / Math.max(1, employment.previous.value ?? 1) * 100) ?? 0,
           weight: LABOUR_WEIGHTS.momentum.employmentTrend,
           label: "Employment momentum",
         }
@@ -510,7 +511,7 @@ export function calculateEuroAreaLabourState({
   );
 
   const labourMomentum: EuroLabourMomentum =
-    momentumScore === null
+    incompleteLabourData || momentumScore === null
       ? "UNAVAILABLE"
       : momentumScore >= LABOUR_THRESHOLDS.momentum.strengthening
         ? "STRENGTHENING"
