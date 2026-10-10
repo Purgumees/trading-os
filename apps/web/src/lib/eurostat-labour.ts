@@ -170,7 +170,10 @@ type JsonStatDataset = {
     string,
     {
       label?: string;
-      category?: Record<string, { index?: Record<string, number>; label: string }>;
+      category?: {
+        index?: Record<string, number>;
+        label?: Record<string, string>;
+      };
     }
   >;
   index?: Record<string, number>;
