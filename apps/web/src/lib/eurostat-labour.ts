@@ -19,7 +19,7 @@ export const EUROSTAT_LABOUR_API_BASE =
  * 
  * - JVR: Job vacancy rate (quarterly, %)
  *   Dataset: jvs_q_nace2, Unit: PC, Frequency: Quarterly, S_Adj: NSA
- *   Euro Area aggregate: NACE_R2=TOTAL (verify actual dataset categories)
+ *   Euro Area aggregate: NACE_R2=B-S; explicitly request job vacancy rate unit PC
  * 
  * - WAGE_GROWTH: Labour Cost Index quarterly growth (%)
  *   Dataset: lc_lci_r2_q, Unit: PCH_SM, Frequency: Quarterly, S_Adj: CA
@@ -116,6 +116,7 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
     filters: {
       freq: "Q",
       s_adj: "NSA",
+      unit: "PC",
       nace_r2: "B-S",
       geo: "EA21",
     },
@@ -232,7 +233,7 @@ export async function fetchEurostatLabourSeries(
 
     const timeDimension = dimensions.time?.category ?? {};
     // Get actual time values from the label keys, sorted
-    const timeCategories = Object.keys(timeDimension.label ?? {}).sort();
+    const timeCategories = Object.keys(timeDimension.index ?? timeDimension.label ?? {}).sort();
 
     // Filter by requested dimensions: age=TOTAL, sex=T (total), s_adj=SA
     const requestedFilters = config.filters;
@@ -245,7 +246,7 @@ export async function fetchEurostatLabourSeries(
         if (dimId !== "time" && !coordinate[dimId]) {
           const dimCategory = dimensions[dimId]!.category;
           // Get category values from the label property
-          const dimCategories = Object.keys(dimCategory?.label ?? {});
+          const dimCategories = Object.keys(dimCategory?.index ?? dimCategory?.label ?? {});
           if (dimCategories.length > 0) {
             // Use the requested filter value if it exists, otherwise use first category
             const requestedValue = (requestedFilters as Record<string, string>)[dimId];
