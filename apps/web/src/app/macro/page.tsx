@@ -586,6 +586,9 @@ export default function MacroPage() {
         </div>
       </section>
 
+      <nav className="mb-6 flex flex-wrap gap-3" aria-label="Macro regions"><a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#euro">🇪🇺 EURO AREA</a><a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#usa">🇺🇸 USA</a></nav>
+      <div id="euro" className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5"><h2 className="text-2xl font-bold">🇪🇺 EURO AREA — EUR MACRO</h2><p className="mt-1 text-sm text-muted-foreground">Eurozone growth, employment and inflation from Eurostat.</p></div>
+
       <section className="mb-8">
         <div className="mb-4">
           <h2 className="text-lg font-semibold">EURO AREA GROWTH</h2>
@@ -934,6 +937,174 @@ export default function MacroPage() {
           )}
         </article>
       </section>
+
+      <section className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">EURO AREA INFLATION</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Eurostat HICP data, assessed against the ECB’s 2% medium-term symmetric target.
+            This EUR inflation engine is independent of USD macro calculations.
+          </p>
+        </div>
+        <article className="rounded-xl border p-5">
+          {euroAreaInflation ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Current Inflation State
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {euroAreaInflation.current.overall}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Headline: {euroAreaInflation.current.headline} · Core:{" "}
+                    {euroAreaInflation.current.core}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Latest YoY
+                  </p>
+                  <p className="mt-1 text-sm">
+                    Headline: {formatPercent(euroAreaInflation.headline.latest.yoy.value)}
+                  </p>
+                  <p className="text-sm">
+                    Core: {formatPercent(euroAreaInflation.core.latest.yoy.value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Inflation Momentum
+                  </p>
+                  <p className="mt-1 text-sm">
+                    Overall: {euroAreaInflation.momentum.overall}
+                  </p>
+                  <p className="text-sm">
+                    Short term: {euroAreaInflation.momentum.shortTerm}
+                  </p>
+                  <p className="text-sm">
+                    Medium term: {euroAreaInflation.momentum.mediumTerm}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Latest Price Pace
+                  </p>
+                  <p className="mt-1 text-sm">
+                    Headline MoM: {formatPercent(euroAreaInflation.headline.latest.mom.value)}
+                  </p>
+                  <p className="text-sm">
+                    Core MoM: {formatPercent(euroAreaInflation.core.latest.mom.value)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Latest observations: Headline{" "}
+                    {euroAreaInflation.headline.latestObservationDate ?? "Unavailable"} · Core{" "}
+                    {euroAreaInflation.core.latestObservationDate ?? "Unavailable"}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {euroAreaInflation.current.explanation}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Target reference:{" "}
+                <a
+                  className="underline"
+                  href="https://www.ecb.europa.eu/mopo/strategy/html/index.en.html"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  ECB monetary policy strategy
+                </a>
+              </p>
+              {euroAreaInflation.headline.freshness === "stale" ||
+              euroAreaInflation.core.freshness === "stale" ? (
+                <p className="mt-2 text-sm font-semibold text-amber-700">
+                  STALE DATA — one or more Eurostat HICP series are older than expected.
+                </p>
+              ) : null}
+              {euroAreaInflation.explanations.map((explanation) => (
+                <p className="mt-1 text-xs text-amber-700" key={explanation}>
+                  {explanation}
+                </p>
+              ))}
+              <div className="mt-5 grid gap-5 border-t pt-4 xl:grid-cols-2">
+                {([
+                  ["Headline HICP", euroAreaInflation.headline],
+                  ["Core HICP", euroAreaInflation.core],
+                ] as const).map(([label, series]) => (
+                  <div className="min-w-0" key={series.seriesId}>
+                    <h3 className="text-sm font-semibold">{label}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Eurostat {series.dataset} · {series.seriesId} · {series.geo} ·{" "}
+                      {series.unit} · observed {series.latestObservationDate ?? "unavailable"} ·{" "}
+                      {series.internalObservationCount} monthly observations
+                    </p>
+                    {series.freshness === "stale" ? (
+                      <p className="mt-1 text-xs font-semibold text-amber-700">STALE DATA</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Short-term: {series.momentum.shortTerm} · Medium-term:{" "}
+                      {series.momentum.mediumTerm} · 3M annualized:{" "}
+                      {formatPercent(series.latest.annualized3m.value)}
+                    </p>
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="w-full min-w-[500px] border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b text-left text-muted-foreground">
+                            <th className="py-2 pr-2">Month</th>
+                            <th className="py-2 pr-2">Index (2025=100)</th>
+                            <th className="py-2 pr-2">YoY</th>
+                            <th className="py-2 pr-2">MoM</th>
+                            <th className="py-2 pr-2">3M annualized</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {series.latestSixMonths.map((month) => (
+                            <tr className="border-b last:border-0" key={month.date}>
+                              <td className="py-2 pr-2 font-medium">{month.date}</td>
+                              <td className="py-2 pr-2">{formatNumber(month.index)}</td>
+                              <td className="py-2 pr-2">{formatPercent(month.yoy)}</td>
+                              <td className="py-2 pr-2">{formatPercent(month.mom)}</td>
+                              <td className="py-2 pr-2">{formatPercent(month.annualized3m)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Eurostat data last updated: {series.lastUpdated ?? "unavailable"} ·{" "}
+                      <a
+                        className="underline"
+                        href={series.sourceUrl ?? undefined}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Official series query
+                      </a>
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <details className="mt-4 border-t pt-3 text-xs text-muted-foreground">
+                <summary className="cursor-pointer font-medium">
+                  Momentum methodology
+                </summary>
+                <p className="mt-2">{euroAreaInflation.momentum.method}</p>
+                <p className="mt-2">{euroAreaInflation.source.freshnessMethod}</p>
+              </details>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {euroInflationError ?? "Loading Euro Area inflation data…"}
+            </p>
+          )}
+        </article>
+      </section>
+
+
+      <div id="usa" className="mb-8 rounded-xl border border-sky-500/40 bg-sky-500/5 p-5"><h2 className="text-2xl font-bold">🇺🇸 USA — USD MACRO</h2><p className="mt-1 text-sm text-muted-foreground">US economic indicators, Federal Reserve expectations and Treasury yields.</p></div>
 
       <section className="mb-8">
         <div className="mb-4">
@@ -1637,173 +1808,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">EURO AREA INFLATION</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Eurostat HICP data, assessed against the ECB’s 2% medium-term symmetric target.
-            This EUR inflation engine is independent of USD macro calculations.
-          </p>
-        </div>
-        <article className="rounded-xl border p-5">
-          {euroAreaInflation ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Current Inflation State
-                  </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    {euroAreaInflation.current.overall}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Headline: {euroAreaInflation.current.headline} · Core:{" "}
-                    {euroAreaInflation.current.core}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Latest YoY
-                  </p>
-                  <p className="mt-1 text-sm">
-                    Headline: {formatPercent(euroAreaInflation.headline.latest.yoy.value)}
-                  </p>
-                  <p className="text-sm">
-                    Core: {formatPercent(euroAreaInflation.core.latest.yoy.value)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Inflation Momentum
-                  </p>
-                  <p className="mt-1 text-sm">
-                    Overall: {euroAreaInflation.momentum.overall}
-                  </p>
-                  <p className="text-sm">
-                    Short term: {euroAreaInflation.momentum.shortTerm}
-                  </p>
-                  <p className="text-sm">
-                    Medium term: {euroAreaInflation.momentum.mediumTerm}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Latest Price Pace
-                  </p>
-                  <p className="mt-1 text-sm">
-                    Headline MoM: {formatPercent(euroAreaInflation.headline.latest.mom.value)}
-                  </p>
-                  <p className="text-sm">
-                    Core MoM: {formatPercent(euroAreaInflation.core.latest.mom.value)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Latest observations: Headline{" "}
-                    {euroAreaInflation.headline.latestObservationDate ?? "Unavailable"} · Core{" "}
-                    {euroAreaInflation.core.latestObservationDate ?? "Unavailable"}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {euroAreaInflation.current.explanation}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Target reference:{" "}
-                <a
-                  className="underline"
-                  href="https://www.ecb.europa.eu/mopo/strategy/html/index.en.html"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  ECB monetary policy strategy
-                </a>
-              </p>
-              {euroAreaInflation.headline.freshness === "stale" ||
-              euroAreaInflation.core.freshness === "stale" ? (
-                <p className="mt-2 text-sm font-semibold text-amber-700">
-                  STALE DATA — one or more Eurostat HICP series are older than expected.
-                </p>
-              ) : null}
-              {euroAreaInflation.explanations.map((explanation) => (
-                <p className="mt-1 text-xs text-amber-700" key={explanation}>
-                  {explanation}
-                </p>
-              ))}
-              <div className="mt-5 grid gap-5 border-t pt-4 xl:grid-cols-2">
-                {([
-                  ["Headline HICP", euroAreaInflation.headline],
-                  ["Core HICP", euroAreaInflation.core],
-                ] as const).map(([label, series]) => (
-                  <div className="min-w-0" key={series.seriesId}>
-                    <h3 className="text-sm font-semibold">{label}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Eurostat {series.dataset} · {series.seriesId} · {series.geo} ·{" "}
-                      {series.unit} · observed {series.latestObservationDate ?? "unavailable"} ·{" "}
-                      {series.internalObservationCount} monthly observations
-                    </p>
-                    {series.freshness === "stale" ? (
-                      <p className="mt-1 text-xs font-semibold text-amber-700">STALE DATA</p>
-                    ) : null}
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Short-term: {series.momentum.shortTerm} · Medium-term:{" "}
-                      {series.momentum.mediumTerm} · 3M annualized:{" "}
-                      {formatPercent(series.latest.annualized3m.value)}
-                    </p>
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="w-full min-w-[500px] border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b text-left text-muted-foreground">
-                            <th className="py-2 pr-2">Month</th>
-                            <th className="py-2 pr-2">Index (2025=100)</th>
-                            <th className="py-2 pr-2">YoY</th>
-                            <th className="py-2 pr-2">MoM</th>
-                            <th className="py-2 pr-2">3M annualized</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {series.latestSixMonths.map((month) => (
-                            <tr className="border-b last:border-0" key={month.date}>
-                              <td className="py-2 pr-2 font-medium">{month.date}</td>
-                              <td className="py-2 pr-2">{formatNumber(month.index)}</td>
-                              <td className="py-2 pr-2">{formatPercent(month.yoy)}</td>
-                              <td className="py-2 pr-2">{formatPercent(month.mom)}</td>
-                              <td className="py-2 pr-2">{formatPercent(month.annualized3m)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Eurostat data last updated: {series.lastUpdated ?? "unavailable"} ·{" "}
-                      <a
-                        className="underline"
-                        href={series.sourceUrl ?? undefined}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        Official series query
-                      </a>
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <details className="mt-4 border-t pt-3 text-xs text-muted-foreground">
-                <summary className="cursor-pointer font-medium">
-                  Momentum methodology
-                </summary>
-                <p className="mt-2">{euroAreaInflation.momentum.method}</p>
-                <p className="mt-2">{euroAreaInflation.source.freshnessMethod}</p>
-              </details>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {euroInflationError ?? "Loading Euro Area inflation data…"}
-            </p>
-          )}
-        </article>
-      </section>
-
-
-      <section className="mb-8">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Growth</h2>
+          <h2 className="text-lg font-semibold">USA — GDP & ECONOMIC GROWTH</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Economic activity, spending, production, and business surveys.
           </p>
@@ -2036,7 +2041,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">Inflation</h2>
+          <h2 className="text-lg font-semibold">USA — CPI & PCE INFLATION</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Current price levels, inflation momentum, and survey-based forward price pressure.
           </p>
@@ -2184,7 +2189,7 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">Labour Market</h2>
+          <h2 className="text-lg font-semibold">USA — LABOUR MARKET</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Employment, wages, layoffs, and job openings.
           </p>

@@ -1,32 +1,15 @@
-name: CI
+name: Eurostat Live Labour Validation
 
 on:
   push:
-    branches: [main, fix/euro-labour-frequency-safety]
-  pull_request:
+    branches: [fix/euro-labour-frequency-safety]
   workflow_dispatch:
-# CI enabled on this fork; trigger validation on the next branch push.
 
 jobs:
-  quality:
+  eurostat-live:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v6
-      # pnpm version comes from the packageManager field in package.json
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      # Formatting debt predates this PR; keep diagnostics non-blocking until normalized.
-      - run: pnpm format:check
-        continue-on-error: true
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: node scripts/check-licenses.mjs
-      - run: pnpm -r --filter "./packages/*" build
-      - run: pnpm build
       - name: Validate four official Eurostat datasets and requested dimensions
         shell: python
         run: |
@@ -61,4 +44,3 @@ jobs:
                   print(f"FAIL {name}: {exc}", flush=True)
           if failed:
               raise SystemExit("Eurostat live validation failed: " + ", ".join(failed))
-

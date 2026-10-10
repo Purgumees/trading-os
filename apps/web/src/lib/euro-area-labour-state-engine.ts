@@ -231,10 +231,9 @@ function getObservationAtLookback(
     const quarterLookback = Math.round(lookbackMonths / 3);
     lookbackIndex = observations.length - 1 - quarterLookback;
   } else {
-    // Annual: Only support YoY (1 year = 1 observation back)
-    // Do not use 3M/6M for annual data
-    if (lookbackMonths > 3) return undefined;
-    lookbackIndex = observations.length - 2;
+    // Annual observations cannot support 3-month or 6-month comparisons.
+    // Return no observation rather than silently substituting a YoY value.
+    return undefined;
   }
 
   return lookbackIndex >= 0 ? observations[lookbackIndex] : undefined;
@@ -400,12 +399,12 @@ export function calculateEuroAreaLabourState({
     ? buildIndicator("WAGE_GROWTH", wageGrowthSeries, errors.WAGE_GROWTH ?? null)
     : {
         id: "WAGE_GROWTH" as const,
-        label: "Labour Cost Index (quarterly, YoY % change)",
+        label: "Wages and salaries hourly cost growth (quarterly, YoY %)",
         dataset: "lc_lci_r2_q",
         source: "Eurostat" as const,
         sourceUrl: "",
         geo: "EA21" as const,
-        unit: "PCH_PP_13",
+        unit: "PCH_SM",
         frequency: "Q" as const,
         freshness: "unavailable" as const,
         status: "unavailable" as const,
@@ -455,9 +454,9 @@ export function calculateEuroAreaLabourState({
           label: "Job vacancy rate",
         }
       : null,
-    employment && employment.threeMonthChange.value !== null
+    employment && employment.latestChange.value !== null
       ? {
-          score: trendScore(employment.threeMonthChange.value) ?? 0,
+          score: trendScore(employment.latestChange.value === null ? null : employment.latestChange.value / Math.max(1, employment.previous.value ?? 1) * 100) ?? 0,
           weight: LABOUR_WEIGHTS.state.employmentGrowth,
           label: "Employment growth",
         }
@@ -468,8 +467,9 @@ export function calculateEuroAreaLabourState({
     stateSignals.filter((s): s is Signal => s !== null)
   );
 
+  const incompleteLabourData = !unemploymentSeries || !employmentSeries || !jobVacanciesSeries || !wageGrowthSeries;
   const currentLabourState: EuroLabourState =
-    stateScore === null
+    incompleteLabourData || stateScore === null
       ? "UNAVAILABLE"
       : stateScore >= LABOUR_THRESHOLDS.state.veryStrong
         ? "VERY STRONG"
@@ -497,9 +497,9 @@ export function calculateEuroAreaLabourState({
           label: "Job vacancy trend",
         }
       : null,
-    employment && employment.sixMonthChange.value !== null
+    employment && employment.latestChange.value !== null
       ? {
-          score: trendScore(employment.sixMonthChange.value) ?? 0,
+          score: trendScore(employment.latestChange.value === null ? null : employment.latestChange.value / Math.max(1, employment.previous.value ?? 1) * 100) ?? 0,
           weight: LABOUR_WEIGHTS.momentum.employmentTrend,
           label: "Employment momentum",
         }
@@ -511,7 +511,7 @@ export function calculateEuroAreaLabourState({
   );
 
   const labourMomentum: EuroLabourMomentum =
-    momentumScore === null
+    incompleteLabourData || momentumScore === null
       ? "UNAVAILABLE"
       : momentumScore >= LABOUR_THRESHOLDS.momentum.strengthening
         ? "STRENGTHENING"
@@ -601,10 +601,18 @@ export function calculateEuroAreaLabourState({
     explanations.push(`Wage data unavailable: ${wageGrowth.error}`);
   }
 
+  // Available only when all four official series are present.
+  // Missing series must not be silently presented as a complete assessment.
+  const presentSeriesCount = [
+    unemploymentSeries,
+    employmentSeries,
+    jobVacanciesSeries,
+    wageGrowthSeries,
+  ].filter((series) => series !== null && series.observations.length > 0).length;
   const status =
-    unemployment && unemploymentSeries
+    presentSeriesCount === 4
       ? "available"
-      : employment || jobVacancies || wageGrowth
+      : presentSeriesCount > 0
         ? "partial"
         : "unavailable";
 
@@ -651,7 +659,7 @@ export function calculateEuroAreaLabourState({
     },
     sources: {
       dataMethod:
-        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Compensation per employee growth (quarterly, Eurostat namq_10_pe, year-on-year % change). Job vacancy rate not available from public Eurostat API as of 2026.",
+        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Hourly wages and salaries cost growth (quarterly, Eurostat lc_lci_r2_q, D11, PCH_SM); job vacancy rate (quarterly, Eurostat jvs_q_nace2, JVR).",
       freshnessThresholds:
         "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months; Annual data current within 4 months, stale within 15 months.",
     },

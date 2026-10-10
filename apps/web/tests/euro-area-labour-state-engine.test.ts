@@ -110,16 +110,26 @@ function makeQuarterlySeries(
 }
 
 describe("Euro Area Labour State Engine v1", () => {
-  it("classifies labour market with all indicators available", () => {
+  it("does not classify a partial labour market as confirmed", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: makeMonthlySeries("UNR", 6.2),
       employmentSeries: makeAnnualSeries("EMP", 72),
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
+    expect(state.status).toBe("partial");
+    expect(state.assessment.currentLabourState).toBe("UNAVAILABLE");
+    expect(state.assessment.labourMomentum).toBe("UNAVAILABLE");
+  });
+
+  it("reports available only with all four official indicators", () => {
+    const state = calculateEuroAreaLabourState({
+      unemploymentSeries: makeMonthlySeries("UNR", 6.2),
+      employmentSeries: makeAnnualSeries("EMP", 72),
+      jobVacanciesSeries: makeQuarterlySeries("JVR", 2.5),
+      wageGrowthSeries: makeQuarterlySeries("WAGE_GROWTH", 3),
+    });
     expect(state.status).toBe("available");
-    expect(state.assessment.currentLabourState).not.toBe("UNAVAILABLE");
-    expect(state.assessment.labourMomentum).not.toBe("UNAVAILABLE");
   });
 
   it("classifies labour market with only unemployment available", () => {
@@ -129,8 +139,8 @@ describe("Euro Area Labour State Engine v1", () => {
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
-    expect(state.status).toBe("available");
-    expect(state.assessment.currentLabourState).not.toBe("UNAVAILABLE");
+    expect(state.status).toBe("partial");
+    expect(state.assessment.currentLabourState).toBe("UNAVAILABLE");
     expect(state.unemployment.indicator.status).toBe("available");
   });
 
@@ -172,8 +182,8 @@ describe("Euro Area Labour State Engine v1", () => {
       wageGrowthSeries: null,
     });
     // Both should return valid classifications (not UNAVAILABLE)
-    expect(lowUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
-    expect(highUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
+    expect(lowUnempState.assessment.currentLabourState).toBe("UNAVAILABLE");
+    expect(highUnempState.assessment.currentLabourState).toBe("UNAVAILABLE");
     // The state classification string should not be empty
     expect(lowUnempState.assessment.currentLabourState.length).toBeGreaterThan(0);
   });
@@ -196,8 +206,11 @@ describe("Euro Area Labour State Engine v1", () => {
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
-    expect(state.employment.indicator?.threeMonthChange.value).not.toBeNull();
-    expect(state.employment.indicator?.direction3m).not.toBe("unavailable");
+    // Annual data must never be interpreted as a three- or six-month change.
+    expect(state.employment.indicator?.threeMonthChange.value).toBeNull();
+    expect(state.employment.indicator?.sixMonthChange.value).toBeNull();
+    expect(state.employment.indicator?.direction3m).toBe("unavailable");
+    expect(state.employment.indicator?.direction6m).toBe("unavailable");
   });
 
   it("correctly handles neutral unemployment score (zero value, regression test for falsy-zero bug)", () => {
@@ -212,9 +225,10 @@ describe("Euro Area Labour State Engine v1", () => {
     });
     // Neutral unemployment should produce a valid classification (not UNAVAILABLE)
     // and the labour state should be calculated correctly, not defaulted to UNAVAILABLE due to null score
-    expect(neutralUnempState.assessment.currentLabourState).not.toBe("UNAVAILABLE");
+    expect(neutralUnempState.assessment.currentLabourState).toBe("UNAVAILABLE");
     // Value should be around 7.0 (test data adds random noise ±0.25 * 24 months with averaging)
     expect(neutralUnempState.unemployment.indicator?.latest.value).toBeDefined();
-    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeCloseTo(7.0, 0.1);
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeGreaterThanOrEqual(6.75);
+    expect(neutralUnempState.unemployment.indicator?.latest.value).toBeLessThanOrEqual(7.25);
   });
 });

@@ -19,10 +19,10 @@ export const EUROSTAT_LABOUR_API_BASE =
  * 
  * - JVR: Job vacancy rate (quarterly, %)
  *   Dataset: jvs_q_nace2, Unit: PC, Frequency: Quarterly, S_Adj: NSA
- *   Euro Area aggregate: NACE_R2=TOTAL (total of all activities)
+ *   Euro Area aggregate: NACE_R2=B-S; explicitly request job vacancy rate unit PC
  * 
  * - WAGE_GROWTH: Labour Cost Index quarterly growth (%)
- *   Dataset: lc_lci_r2_q, Unit: PCH_PP_13, Frequency: Quarterly, S_Adj: CA
+ *   Dataset: lc_lci_r2_q, Unit: PCH_SM, Frequency: Quarterly, S_Adj: CA
  *   Represents YoY % change in hourly labour cost across all activities
  *   NOTE: This is a cost index, not a wage series. Reflects total compensation including non-wage benefits.
  */
@@ -41,7 +41,7 @@ export type EurostatLabourSeries = {
   source: "Eurostat";
   sourceUrl: string;
   geo: "EA21" | "EUR";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13"; // Percentage variants, level, YoY change, and percentage point change
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_SM"; // Percentage variants, level, YoY change, and percentage point change
   frequency: "M" | "Q" | "A"; // Monthly, Quarterly, or Annual
   filters: Record<string, string>;
   lastUpdated: string | null;
@@ -55,7 +55,7 @@ type SurveyConfig = {
   dataset: string;
   label: string;
   frequency: "M" | "Q" | "A";
-  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_PP_13";
+  unit: "PC" | "PC_POP" | "PC_STOCK" | "PC_ACT" | "THS_PER" | "PCH_SM_PER" | "PCH_SM";
   filters: Record<string, string>;
 };
 
@@ -116,30 +116,32 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
     filters: {
       freq: "Q",
       s_adj: "NSA",
-      nace_r2: "TOTAL",
+      unit: "PC",
+      nace_r2: "B-S",
       geo: "EA21",
     },
   },
 
   // Labour Cost Index - Quarterly growth
   // Dataset: lc_lci_r2_q (Labour Cost Index by NACE Rev. 2 activity - quarterly)
-  // Unit: PCH_PP_13 (% change, percentage points change in previous period)
-  // Represents YoY % change in nominal hourly labour cost (wages + non-wage costs)
+  // Unit: PCH_SM (percentage change compared with the same quarter a year earlier)
+  // Represents YoY % change in nominal hourly wages and salaries (lcstruct=D11)
   // Frequency: Q (quarterly), Calendar Adjusted
-  // Geography: EA21 (Euro area aggregate, NACE_R2=TOTAL)
-  // IMPORTANT: This is an index-based measure, not actual wage growth.
-  // It reflects compensation cost changes including social contributions.
+  // Geography: EA21 (Euro area aggregate, NACE_R2=B-S)
+  // IMPORTANT: This is a wages-and-salaries hourly cost index, not pay per employee.
+  // Employer social contributions are excluded by lcstruct=D11.
   WAGE_GROWTH: {
     id: "WAGE_GROWTH",
     dataset: "lc_lci_r2_q",
-    label: "Labour Cost Index (quarterly, YoY % change)",
+    label: "Wages and salaries hourly cost growth (quarterly, YoY %)",
     frequency: "Q",
-    unit: "PCH_PP_13",
+    unit: "PCH_SM",
     filters: {
       freq: "Q",
       s_adj: "CA",
-      nace_r2: "TOTAL",
-      unit: "PCH_PP_13",
+      nace_r2: "B-S",
+      lcstruct: "D11",
+      unit: "PCH_SM",
       geo: "EA21",
     },
   },
@@ -169,41 +171,37 @@ type JsonStatDataset = {
     string,
     {
       label?: string;
-      category?: Record<string, { index?: Record<string, number>; label: string }>;
+      category?: {
+        index?: Record<string, number>;
+        label?: Record<string, string>;
+      };
     }
   >;
   index?: Record<string, number>;
 };
 
 function flatIndexFor(
-  dimensions: Record<string, { label?: string; category?: Record<string, any> }>,
+  dataset: JsonStatDataset,
   coordinateObject: Record<string, string>
-): number | string {
-  // Try using the index property first (which maps coordinate values to flat indices)
-  // If the value is provided directly as a keyed number, use that instead
-  const dimIds = Object.keys(dimensions);
-  
-  // Build the flat index based on the order of dimensions
-  let index = 0;
-  let multiplier = 1;
-
-  for (let dimIndex = dimIds.length - 1; dimIndex >= 0; dimIndex -= 1) {
-    const dimensionId = dimIds[dimIndex]!;
-    const coordinate = coordinateObject[dimensionId];
-    const dimension = dimensions[dimensionId]!;
-    
-    // Get the index for this coordinate from the dimension's category indices
-    const categoryIndex =
-      dimension.category?.index?.[coordinate ?? ""] ?? null;
-
-    if (categoryIndex !== null && categoryIndex !== undefined) {
-      index += categoryIndex * multiplier;
-    }
-
-    const categoryCount = Object.keys(dimension.category?.label ?? {}).length;
-    multiplier *= categoryCount;
+): number {
+  const ids = dataset.id;
+  const sizes = dataset.size;
+  const dimensions = dataset.dimension;
+  if (!ids || !sizes || !dimensions || ids.length !== sizes.length) {
+    throw new Error("Invalid JSON-stat dimension order or sizes");
   }
 
+  let index = 0;
+  for (let i = 0; i < ids.length; i += 1) {
+    const dimId = ids[i]!;
+    const coordinate = coordinateObject[dimId];
+    const category = dimensions[dimId]?.category;
+    const categoryIndex = category?.index?.[coordinate ?? ""];
+    if (coordinate === undefined || typeof categoryIndex !== "number") {
+      throw new Error(`Missing Eurostat category ${dimId}=${coordinate ?? "undefined"}`);
+    }
+    index = index * sizes[i]! + categoryIndex;
+  }
   return index;
 }
 
@@ -229,13 +227,13 @@ export async function fetchEurostatLabourSeries(
     }
 
     const dimensions = jsonStat.dimension;
-    const dimensionIds = Object.keys(dimensions);
+    const dimensionIds = jsonStat.id ?? Object.keys(dimensions);
 
     const observations: EurostatLabourObservation[] = [];
 
     const timeDimension = dimensions.time?.category ?? {};
     // Get actual time values from the label keys, sorted
-    const timeCategories = Object.keys(timeDimension.label ?? {}).sort();
+    const timeCategories = Object.keys(timeDimension.index ?? timeDimension.label ?? {}).sort();
 
     // Filter by requested dimensions: age=TOTAL, sex=T (total), s_adj=SA
     const requestedFilters = config.filters;
@@ -248,17 +246,24 @@ export async function fetchEurostatLabourSeries(
         if (dimId !== "time" && !coordinate[dimId]) {
           const dimCategory = dimensions[dimId]!.category;
           // Get category values from the label property
-          const dimCategories = Object.keys(dimCategory?.label ?? {});
+          const dimCategories = Object.keys(dimCategory?.index ?? dimCategory?.label ?? {});
           if (dimCategories.length > 0) {
             // Use the requested filter value if it exists, otherwise use first category
             const requestedValue = (requestedFilters as Record<string, string>)[dimId];
-            const chosenValue = requestedValue || dimCategories[0]!;
+            // Never silently substitute a different indicator/geography if a requested code is absent.
+            if (requestedValue && !dimCategories.includes(requestedValue)) {
+              throw new Error(`Missing requested Eurostat dimension ${dimId}=${requestedValue}`);
+            }
+            if (!requestedValue && dimCategories.length !== 1) {
+              throw new Error(`Ambiguous Eurostat dimension ${dimId}: ${dimCategories.join(", ")}`);
+            }
+            const chosenValue = requestedValue ?? dimCategories[0]!;
             coordinate[dimId] = chosenValue;
           }
         }
       }
 
-      const flatIndex = flatIndexFor(dimensions, coordinate);
+      const flatIndex = flatIndexFor(jsonStat, coordinate);
       const rawValue = (jsonStat.value as Record<string | number, unknown>)[flatIndex];
 
       if (rawValue !== null && rawValue !== undefined) {
