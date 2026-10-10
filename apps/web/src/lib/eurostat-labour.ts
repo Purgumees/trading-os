@@ -116,7 +116,7 @@ const LABOUR_CONFIG: Record<EurostatLabourSeriesId, SurveyConfig> = {
     filters: {
       freq: "Q",
       s_adj: "NSA",
-      nace_r2: "TOTAL",
+      nace_r2: "B-S",
       geo: "EA21",
     },
   },
