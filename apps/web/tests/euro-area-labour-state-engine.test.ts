@@ -139,7 +139,7 @@ describe("Euro Area Labour State Engine v1", () => {
       jobVacanciesSeries: null,
       wageGrowthSeries: null,
     });
-    expect(state.status).toBe("available");
+    expect(state.status).toBe("partial");
     expect(state.assessment.currentLabourState).not.toBe("UNAVAILABLE");
     expect(state.unemployment.indicator.status).toBe("available");
   });
