@@ -27,3 +27,38 @@ jobs:
       - run: node scripts/check-licenses.mjs
       - run: pnpm -r --filter "./packages/*" build
       - run: pnpm build
+        - name: Validate four official Eurostat datasets and requested dimensions
+          shell: python
+          run: |
+            import json
+            import urllib.parse
+            import urllib.request
+  
+            base = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/"
+            datasets = {
+                "UNR": ("une_rt_m", {"freq":"M","s_adj":"SA","age":"TOTAL","sex":"T","unit":"PC_ACT","geo":"EA21"}),
+                "EMP": ("lfsa_egan2", {"freq":"A","sex":"T","age":"Y20-64","nace_r2":"TOTAL","geo":"EA21"}),
+                "JVR": ("jvs_q_nace2", {"freq":"Q","s_adj":"NSA","nace_r2":"TOTAL","geo":"EA21"}),
+                "WAGE_GROWTH": ("lc_lci_r2_q", {"freq":"Q","s_adj":"CA","nace_r2":"B-S","lcstruct":"D11","unit":"PCH_SM","geo":"EA21"}),
+            }
+            failed = []
+            for name, (dataset, filters) in datasets.items():
+                params = dict(filters, lastTimePeriod="3", lang="en")
+                url = base + dataset + "?" + urllib.parse.urlencode(params)
+                print(f"Checking {name}: {dataset} {filters}", flush=True)
+                try:
+                    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent":"TradingOS-Eurostat-Validation/1.0"}), timeout=45) as response:
+                        payload = json.load(response)
+                    dimensions = payload.get("dimension", {})
+                    for key, code in filters.items():
+                        if key in dimensions and code not in dimensions[key].get("category", {}).get("index", {}):
+                            raise ValueError(f"requested dimension {key}={code} not returned")
+                    if not payload.get("value"):
+                        raise ValueError("no numeric observations returned")
+                    print(f"PASS {name}: {len(payload['value'])} observations", flush=True)
+                except Exception as exc:
+                    failed.append(name)
+                    print(f"FAIL {name}: {exc}", flush=True)
+            if failed:
+                raise SystemExit("Eurostat live validation failed: " + ", ".join(failed))
+  
