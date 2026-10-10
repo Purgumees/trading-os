@@ -5,6 +5,7 @@ on:
     branches: [main, fix/euro-labour-frequency-safety]
   pull_request:
   workflow_dispatch:
+# CI enabled on this fork; trigger validation on the next branch push.
 
 jobs:
   quality:
