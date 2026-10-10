@@ -372,7 +372,7 @@ export function calculateEuroAreaLabourState({
     : {
         id: "JVR" as const,
         label: "Job Vacancy Rate",
-        dataset: "jvs_q_nace2",
+        dataset: "jvs_q_r21",
         source: "Eurostat" as const,
         sourceUrl: "",
         geo: "EA21" as const,
@@ -441,15 +441,15 @@ export function calculateEuroAreaLabourState({
       : null,
     jobVacancies && jobVacancies.latest.value !== null
       ? {
-          score: thresholdScore(
-            jobVacancies.latest.value,
-            [
-              LABOUR_THRESHOLDS.state.jobVacancyRate.strong,
-              LABOUR_THRESHOLDS.state.jobVacancyRate.positive,
-              LABOUR_THRESHOLDS.state.jobVacancyRate.neutral,
-              LABOUR_THRESHOLDS.state.jobVacancyRate.weak,
-            ]
-          ) ?? 0,
+          score: jobVacancies.latest.value >= LABOUR_THRESHOLDS.state.jobVacancyRate.strong
+            ? 2
+            : jobVacancies.latest.value >= LABOUR_THRESHOLDS.state.jobVacancyRate.positive
+              ? 1
+              : jobVacancies.latest.value >= LABOUR_THRESHOLDS.state.jobVacancyRate.neutral
+                ? 0
+                : jobVacancies.latest.value >= LABOUR_THRESHOLDS.state.jobVacancyRate.weak
+                  ? -1
+                  : -2,
           weight: LABOUR_WEIGHTS.state.jobVacancyRate,
           label: "Job vacancy rate",
         }
@@ -659,7 +659,7 @@ export function calculateEuroAreaLabourState({
     },
     sources: {
       dataMethod:
-        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Hourly wages and salaries cost growth (quarterly, Eurostat lc_lci_r2_q, D11, PCH_SM); job vacancy rate (quarterly, Eurostat jvs_q_nace2, JVR).",
+        "Unemployment rate (monthly, Eurostat une_rt_m, seasonally adjusted); Employment level (annual, Eurostat lfsa_egan2, ages 20-64); Hourly wages and salaries cost growth (quarterly, Eurostat lc_lci_r2_q, D11, PCH_SM); job vacancy rate (quarterly, Eurostat jvs_q_r21, JVR).",
       freshnessThresholds:
         "Monthly data considered current within 1 month, stale within 3 months; Quarterly data current within 2 months, stale within 6 months; Annual data current within 4 months, stale within 15 months.",
     },
