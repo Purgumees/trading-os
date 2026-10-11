@@ -26,3 +26,36 @@ export function curveState(rows:YieldRow[]) {
  const direction=twoChange!==null&&tenChange!==null?(twoChange<0&&tenChange<0?'Both yields fell':twoChange>0&&tenChange>0?'Both yields rose':'Yields moved in different directions or one was unchanged'):'';
  return {last,previous,gap,change,move,direction};
 }
+
+export const yieldHorizons = [
+  { key: "oneDay", label: "1D" },
+  { key: "oneWeek", label: "1W" },
+  { key: "oneMonth", label: "1M" },
+  { key: "threeMonths", label: "3M" },
+] as const;
+export type YieldChange = { value: number; date: string; previous: number } | null;
+export function yieldChanges<T extends {date:string}>(rows:T[],getValue:(row:T)=>number|null,scale=100) {
+  const available=rows.filter(r=>getValue(r)!==null).sort((a,b)=>a.date.localeCompare(b.date));
+  const latest=available.at(-1);
+  const changes: Record<(typeof yieldHorizons)[number]['key'],YieldChange>={oneDay:null,oneWeek:null,oneMonth:null,threeMonths:null};
+  if(!latest)return {latest:null,changes};
+  for(const horizon of yieldHorizons){
+    const target=new Date(`${latest.date}T00:00:00Z`);
+    if(horizon.key==='oneDay')target.setUTCDate(target.getUTCDate()-1);
+    else if(horizon.key==='oneWeek')target.setUTCDate(target.getUTCDate()-7);
+    else {
+      const day=target.getUTCDate();target.setUTCDate(1);target.setUTCMonth(target.getUTCMonth()-(horizon.key==='oneMonth'?1:3));
+      target.setUTCDate(Math.min(day,new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate()));
+    }
+    const date=target.toISOString().slice(0,10);
+    const old=available.findLast(r=>r.date<=date);
+    // Up to one calendar week accommodates holidays, never missing months.
+    if(old&&target.getTime()-Date.parse(old.date)<=7*86400000){
+      changes[horizon.key]={value:(getValue(latest)!-getValue(old)!)*scale,date:old.date,previous:getValue(old)!};
+    }
+  }
+  return {latest,changes};
+}
+export function yieldSpreads(rows:YieldRow[]) {
+ return rows.map(r=>({date:r.date,tenSpread:r.two!==null&&r.ten!==null?(r.ten-r.two)*100:null,thirtySpread:r.two!==null&&r.thirty!==null?(r.thirty-r.two)*100:null}));
+}
