@@ -68,6 +68,11 @@ function Side({
       <p className="mt-2 text-2xl font-bold">{value(last?.value)}</p>
       <p className="text-xs text-muted-foreground">
         {last ? macroDateLabel(last.date, metric.key === "policy") : "Data unavailable"} · {label}
+        {metric.key === "inflation" &&
+        last &&
+        snapshot.estimatedInflationPeriods?.includes(last.date)
+          ? " · FLASH ESTIMATE"
+          : ""}
       </p>
       <details className="mt-3">
         <summary className="cursor-pointer text-sm font-medium">View chart and history</summary>

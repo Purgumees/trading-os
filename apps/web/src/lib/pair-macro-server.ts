@@ -47,10 +47,11 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
           s.observations.map(({ date, value }) => ({ date, value })),
         ),
     us
-      ? fred("CPIAUCSL").then(indexInflation)
-      : fetchEurostatHicpSeries("TOTAL").then((s) =>
-          indexInflation(s.observations.map((r) => ({ date: r.date, value: r.index }))),
-        ),
+      ? fred("CPIAUCSL").then((rows) => ({ rows: indexInflation(rows), estimated: [] as string[] }))
+      : fetchEurostatHicpSeries("TOTAL").then((s) => ({
+          rows: indexInflation(s.observations.map((r) => ({ date: r.date, value: r.index }))),
+          estimated: s.observations.filter((r) => r.flag?.includes("e")).map((r) => r.date),
+        })),
     us
       ? fred("UNRATE").then((rows) =>
           rows.slice(-12).map((r) => ({ ...r, date: r.date.slice(0, 7) })),
@@ -63,7 +64,7 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
   const data: CountryData = {
     policy: policy.status === "fulfilled" ? policy.value : [],
     gdp: gdp.status === "fulfilled" ? gdp.value : [],
-    inflation: inflation.status === "fulfilled" ? inflation.value : [],
+    inflation: inflation.status === "fulfilled" ? inflation.value.rows : [],
     labour: labour.status === "fulfilled" ? labour.value : [],
     errors: results.flatMap((r, i) =>
       r.status === "rejected"
@@ -77,6 +78,7 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
   };
   return {
     ...data,
+    estimatedInflationPeriods: inflation.status === "fulfilled" ? inflation.value.estimated : [],
     currency,
     name: us ? "United States" : "Euro area",
     policyLabel: us ? "Fed target range · upper bound" : "ECB deposit facility rate",

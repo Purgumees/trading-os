@@ -21,6 +21,7 @@ export type ComparisonSnapshot = CountryData & {
   policyLabel: string;
   inflationLabel: string;
   labourLabel: string;
+  estimatedInflationPeriods?: string[];
   quarterlyCpi: boolean;
   quarterlyLabour: boolean;
   sources: { policy: string; inflation: string; labour: string };
