@@ -1,7 +1,7 @@
 "use client";
 
 import { macroDateLabel } from "@/lib/macro-date-label";
-import Link from "next/link";
+import { MacroRegionNav } from "@/components/MacroRegionNav";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
@@ -681,23 +681,7 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
         </div>
       </section>
 
-      <nav className="mb-6 flex flex-wrap gap-3" aria-label="Macro regions">
-        {(
-          [
-            ["euro", "/euro", "🇪🇺 EURO AREA"],
-            ["dxy", "/dxy", "🇺🇸 USA / DXY"],
-          ] as const
-        ).map(([key, href, label]) => (
-          <Link
-            key={key}
-            href={href}
-            aria-current={region === key ? "page" : undefined}
-            className={`rounded-lg border px-5 py-3 font-semibold ${region === key ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <MacroRegionNav region={region} />
       {region === "euro" && (
         <>
           <div id="euro" className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
