@@ -14,6 +14,7 @@ import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
 import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
+import { TreasuryPanel } from "@/components/TreasuryPanel";
 import { HistoricalTable } from "@/components/HistoricalTable";
 import {
   getLatestObservations,
@@ -2713,49 +2714,9 @@ export default function MacroPage() {
           />
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Card
-            title="Next Treasury Auction"
-            value="—"
-            description="Treasury calendar not connected"
-          />
-
-          <Card
-            title="Next Treasury Buyback"
-            value="—"
-            description="Treasury buyback schedule not connected"
-          />
-        </div>
       </section>
 
-      {/* TREASURY SIGNAL */}
-      <section className="mb-8">
-        <h2 className="mb-4 text-lg font-semibold">Treasury Demand Signal</h2>
-
-        <div className="rounded-xl border p-5">
-          <div className="grid gap-6 md:grid-cols-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Bid-to-Cover</p>
-              <p className="mt-2 text-xl font-semibold">—</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-muted-foreground">Tail / Stop-Through</p>
-              <p className="mt-2 text-xl font-semibold">—</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-muted-foreground">Indirect Bidders</p>
-              <p className="mt-2 text-xl font-semibold">—</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-muted-foreground">Demand</p>
-              <p className="mt-2 text-xl font-semibold">Waiting</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <TreasuryPanel />
 
       {/* CURRENCY BIAS */}
       <section className="mb-8">
