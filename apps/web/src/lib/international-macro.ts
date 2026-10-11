@@ -9,6 +9,8 @@ export const countries = {
     labour: "LRHUTTTTJPM156S",
     quarterlyCpi: false,
     quarterlyLabour: false,
+    employment: "LFEMTTTTJPM647S",
+    quarterlyEmployment: false,
   },
   aud: {
     name: "Australia",
@@ -19,6 +21,8 @@ export const countries = {
     labour: "LRHUTTTTAUM156S",
     quarterlyCpi: true,
     quarterlyLabour: false,
+    employment: "LFEMTTTTAUM647S",
+    quarterlyEmployment: false,
   },
   gbp: {
     name: "United Kingdom",
@@ -29,6 +33,8 @@ export const countries = {
     labour: "LRHUTTTTGBM156S",
     quarterlyCpi: false,
     quarterlyLabour: false,
+    employment: "LFEMTTTTGBQ647S",
+    quarterlyEmployment: true,
   },
   cad: {
     name: "Canada",
@@ -39,6 +45,8 @@ export const countries = {
     labour: "LRHUTTTTCAM156S",
     quarterlyCpi: false,
     quarterlyLabour: false,
+    employment: "LFEMTTTTCAM647S",
+    quarterlyEmployment: false,
   },
   nzd: {
     name: "New Zealand",
@@ -49,11 +57,14 @@ export const countries = {
     labour: "LRHUTTTTNZQ156S",
     quarterlyCpi: true,
     quarterlyLabour: true,
+    employment: "LFEMTTTTNZQ647S",
+    quarterlyEmployment: true,
   },
 } as const;
 export type Country = keyof typeof countries;
 export type Observation = { date: string; value: number };
 export type CountryData = {
+  employment?: Observation[];
   policy: Observation[];
   inflation: { date: string; yoy: number; change: number | null }[];
   gdp: Observation[];
@@ -111,4 +122,38 @@ export function nzGdp(content: string): Observation[] {
     )
     .map((r) => ({ date: quarter(r.Period!.replace(".", "-")), value: Number(r.Data_value) }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function employmentHistory(observations: Observation[], quarterly: boolean) {
+  const levels = new Map(observations.map((r) => [r.date, r.value]));
+  const previousDate = (date: string, offset: number) => {
+    if (quarterly) {
+      const year = Number(date.slice(0, 4)),
+        q = Number(date.slice(-1)),
+        index = year * 4 + q - 1 - offset;
+      return `${Math.floor(index / 4)}-Q${(index % 4) + 1}`;
+    }
+    const d = new Date(`${date.slice(0, 7)}-01T00:00:00Z`);
+    d.setUTCMonth(d.getUTCMonth() - offset);
+    return d.toISOString().slice(0, 7);
+  };
+  return [...observations]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((r) => {
+      const previous = levels.get(previousDate(r.date, 1)),
+        yearAgo = levels.get(previousDate(r.date, quarterly ? 4 : 12));
+      return {
+        date: r.date,
+        value: r.value,
+        change: previous === undefined ? null : r.value - previous,
+        yoy: yearAgo && r.value > 0 ? (r.value / yearAgo - 1) * 100 : null,
+      };
+    })
+    .slice(quarterly ? -8 : -12);
+}
+export function monthEndHistory(rows: Observation[]) {
+  const months = new Map<string, Observation>();
+  for (const r of [...rows].sort((a, b) => a.date.localeCompare(b.date)))
+    months.set(r.date.slice(0, 7), r);
+  return [...months.values()];
 }

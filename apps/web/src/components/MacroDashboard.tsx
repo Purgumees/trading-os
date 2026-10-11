@@ -1,6 +1,7 @@
 "use client";
 
 import { macroDateLabel } from "@/lib/macro-date-label";
+import { ForexPairComparison } from "@/components/ForexPairComparison";
 import { MacroRegionNav } from "@/components/MacroRegionNav";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
@@ -454,8 +455,6 @@ const currencies = [
   { currency: "NZD", bias: "Neutral", score: 0 },
 ];
 
-const FOREX_PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD"] as const;
-type ForexPair = (typeof FOREX_PAIRS)[number];
 
 const catalysts = [
   "Treasury auctions",
@@ -485,7 +484,6 @@ function Card({
 }
 
 export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
-  const [selectedPair, setSelectedPair] = useState<ForexPair>("EURUSD");
   const [economy, setEconomy] = useState<EconomyState | null>(null);
   const usaGdpObservations = (economy?.growth.gdp.rawObservations ?? []).map((row) => ({
     date: `${row.date.slice(0, 4)}-Q${Math.floor((Number(row.date.slice(5, 7)) - 1) / 3) + 1}`,
@@ -514,8 +512,6 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
   const [euroGrowthError, setEuroGrowthError] = useState<string | null>(null);
   const [euroAreaLabour, setEuroAreaLabour] = useState<EuroAreaLabourState | null>(null);
   const [euroLabourError, setEuroLabourError] = useState<string | null>(null);
-  const baseCurrency = selectedPair.slice(0, 3);
-  const quoteCurrency = selectedPair.slice(3, 6);
 
   useEffect(() => {
     if (region !== "dxy") return;
@@ -648,38 +644,7 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
         </p>
       </div>
 
-      <section aria-label="Forex pair selector" className="mb-8 rounded-xl border p-5">
-        <h2 className="text-sm font-semibold">SELECT FOREX PAIR</h2>
-        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Forex pairs">
-          {FOREX_PAIRS.map((pair) => {
-            const isSelected = pair === selectedPair;
-            return (
-              <button
-                aria-pressed={isSelected}
-                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                  isSelected
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "bg-background text-foreground hover:bg-muted"
-                }`}
-                key={pair}
-                onClick={() => setSelectedPair(pair)}
-                type="button"
-              >
-                {pair}
-              </button>
-            );
-          })}
-        </div>
-        <div aria-live="polite" className="mt-3 text-sm">
-          <p>
-            <span className="font-medium">Selected Pair:</span> {selectedPair}
-          </p>
-          <p className="text-muted-foreground">
-            <span className="font-medium text-foreground">Comparing:</span> {baseCurrency} vs{" "}
-            {quoteCurrency}
-          </p>
-        </div>
-      </section>
+      <ForexPairComparison />
 
       <MacroRegionNav region={region} />
       {region === "euro" && (

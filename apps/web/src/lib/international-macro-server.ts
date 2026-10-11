@@ -8,7 +8,7 @@ import {
   type CountryData,
   type Observation,
 } from "./international-macro";
-async function download(url: string) {
+export async function download(url: string) {
   const response = await fetch(url, {
     next: { revalidate: 3600 },
     signal: AbortSignal.timeout(25000),
@@ -16,7 +16,7 @@ async function download(url: string) {
   if (!response.ok) throw new Error(`Source unavailable (${response.status})`);
   return response;
 }
-async function fred(series: string): Promise<Observation[]> {
+export async function fred(series: string): Promise<Observation[]> {
   const key = process.env.FRED_API_KEY?.trim();
   if (!key) throw new Error("FRED is not configured");
   const params = new URLSearchParams({
@@ -86,9 +86,16 @@ export async function countryData(country: Country): Promise<CountryData> {
         .slice(c.quarterlyLabour ? -8 : -12)
         .map((r) => ({ ...r, date: c.quarterlyLabour ? quarter(r.date) : r.date.slice(0, 7) })),
     ),
+    fred(c.employment).then((rows) =>
+      rows.map((r) => ({
+        ...r,
+        date: c.quarterlyEmployment ? quarter(r.date) : r.date.slice(0, 7),
+      })),
+    ),
   ]);
-  const [policy, inflation, gdp, labour] = results;
+  const [policy, inflation, gdp, labour, employment] = results;
   return {
+    employment: employment.status === "fulfilled" ? employment.value : [],
     policy: policy.status === "fulfilled" ? policy.value : [],
     inflation: inflation.status === "fulfilled" ? inflation.value : [],
     gdp: gdp.status === "fulfilled" ? gdp.value.rows : [],
@@ -96,7 +103,10 @@ export async function countryData(country: Country): Promise<CountryData> {
     gdpSource: gdp.status === "fulfilled" ? gdp.value.source : "",
     errors: results.flatMap((r, i) =>
       r.status === "rejected"
-        ? [["Policy rate", "Inflation", "GDP", "Unemployment"][i] + " data currently unavailable"]
+        ? [
+            ["Policy rate", "Inflation", "GDP", "Unemployment", "Employment"][i] +
+              " data currently unavailable",
+          ]
         : [],
     ),
     fetchedAt: new Date().toISOString(),

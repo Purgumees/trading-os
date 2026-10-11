@@ -2,11 +2,16 @@
 import { useEffect, useState } from "react";
 import {
   countries,
+  employmentHistory,
+  monthEndHistory,
   type Country,
   type CountryData,
   type Observation,
 } from "@/lib/international-macro";
 import { macroDateLabel } from "@/lib/macro-date-label";
+import { ForexPairComparison } from "./ForexPairComparison";
+import { MacroObservationTable } from "./MacroObservationTable";
+import type { ForexPair } from "@/lib/pair-macro";
 import { MacroRegionNav } from "./MacroRegionNav";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { QuarterlyGrowthHistory } from "./QuarterlyGrowthHistory";
@@ -43,6 +48,11 @@ function Metric({
         series={[{ key: "value", label: title }]}
         unit="%"
       />
+      <MacroObservationTable
+        rows={title.includes("policy rate") ? monthEndHistory(rows) : rows.slice(-12)}
+        columns={[{ key: "value", label: "Rate" }]}
+        daily={title.includes("policy rate")}
+      />
       <p className="text-sm text-muted-foreground">{explanation}</p>
       <a
         href={source}
@@ -75,9 +85,18 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
     return () => controller.abort();
   }, [country]);
   const last = data?.inflation.at(-1);
+  const employment = employmentHistory(data?.employment ?? [], c.quarterlyEmployment);
+  const latestEmployment = employment.at(-1);
   return (
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={country} />
+      <ForexPairComparison
+        initialPair={
+          ({ jpy: "USDJPY", aud: "AUDUSD", gbp: "GBPUSD", cad: "USDCAD", nzd: "NZDUSD" } as const)[
+            country
+          ] as ForexPair
+        }
+      />
       <header className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
         <h1 className="text-3xl font-bold">
           {c.flag} {c.name} · {country.toUpperCase()} MACRO
@@ -148,6 +167,16 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
                 ]}
                 unit="%"
               />
+              <MacroObservationTable
+                rows={data.inflation}
+                columns={[
+                  { key: "yoy", label: "YoY inflation" },
+                  {
+                    key: "change",
+                    label: c.quarterlyCpi ? "QoQ price change" : "MoM price change",
+                  },
+                ]}
+              />
               <p className="text-sm text-muted-foreground">
                 Sticky inflation can support the currency through higher rate expectations; cooling
                 inflation can increase expectations of cuts. Weak growth can change that
@@ -175,6 +204,48 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
               source={`https://fred.stlouisfed.org/series/${c.labour}`}
               explanation={`Seasonally adjusted · ${c.quarterlyLabour ? "quarterly" : "monthly"}. Rising unemployment can increase rate-cut expectations and pressure ${country.toUpperCase()}; falling unemployment can support it. OECD harmonized rates and reporting lags may differ from national headlines.`}
             />
+            <section className="rounded-xl border p-5 min-w-0 lg:col-span-2">
+              <h2 className="text-xl font-semibold">Jobs · employment change</h2>
+              <p className="mt-3 text-3xl font-bold">
+                {latestEmployment?.change == null
+                  ? "—"
+                  : `${latestEmployment.change > 0 ? "+" : ""}${latestEmployment.change.toLocaleString("en")} employed people`}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {latestEmployment ? macroDateLabel(latestEmployment.date) : "Data unavailable"} ·
+                change vs previous {c.quarterlyEmployment ? "quarter" : "month"} · total employment{" "}
+                {latestEmployment?.value.toLocaleString("en") ?? "—"}
+              </p>
+              <MacroHistoryChart
+                title="Employment change"
+                rows={employment}
+                series={[
+                  { key: "change", label: c.quarterlyEmployment ? "QoQ change" : "MoM change" },
+                ]}
+                unit="persons"
+              />
+              <MacroObservationTable
+                rows={employment}
+                columns={[
+                  { key: "value", label: "Employed people", number: true },
+                  { key: "change", label: "Net change", number: true },
+                  { key: "yoy", label: "YoY growth" },
+                ]}
+              />
+              <p className="mt-3 text-sm text-muted-foreground">
+                OECD labour-force survey employment, age 15+. Seasonally adjusted. A net increase
+                means more people are employed; this is not the number of job vacancies and is not
+                US nonfarm payrolls.
+              </p>
+              <a
+                href={`https://fred.stlouisfed.org/series/${c.employment}`}
+                className="mt-3 inline-block text-xs underline text-muted-foreground"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Employment source ↗
+              </a>
+            </section>
           </div>
           <aside className="mt-6 rounded-xl border p-5">
             <h2 className="text-lg font-semibold">How to read the currency impact</h2>
@@ -193,8 +264,9 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
                       : "GBP is also sensitive to fiscal policy and risk sentiment."}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Live FX prices, core inflation and a domestic 2Y / 10Y / 30Y yield curve are not
-              connected on this page yet.
+              Policy rates, real GDP growth, headline inflation and unemployment are connected.
+              Historical tables show the latest available observations; publication lags vary by
+              source.
             </p>
           </aside>
         </>
