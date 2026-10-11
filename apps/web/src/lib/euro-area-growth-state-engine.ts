@@ -3,10 +3,7 @@ import type {
   EurostatGrowthSeries,
   EurostatGrowthSeriesId,
 } from "@/lib/eurostat-growth";
-import type {
-  EurostatEcSurveyId,
-  EurostatEcSurveySeries,
-} from "@/lib/eurostat-ec-surveys";
+import type { EurostatEcSurveyId, EurostatEcSurveySeries } from "@/lib/eurostat-ec-surveys";
 
 export type EuroGrowthState =
   | "STRONG EXPANSION"
@@ -16,19 +13,9 @@ export type EuroGrowthState =
   | "CONTRACTION"
   | "UNAVAILABLE";
 export type EuroGrowthMomentum =
-  | "ACCELERATING"
-  | "IMPROVING"
-  | "STABLE"
-  | "SLOWING"
-  | "DETERIORATING"
-  | "UNAVAILABLE";
+  "ACCELERATING" | "IMPROVING" | "STABLE" | "SLOWING" | "DETERIORATING" | "UNAVAILABLE";
 export type EuroForwardGrowth =
-  | "STRONGLY POSITIVE"
-  | "POSITIVE"
-  | "NEUTRAL"
-  | "NEGATIVE"
-  | "STRONGLY NEGATIVE"
-  | "UNAVAILABLE";
+  "STRONGLY POSITIVE" | "POSITIVE" | "NEUTRAL" | "NEGATIVE" | "STRONGLY NEGATIVE" | "UNAVAILABLE";
 type TrendDirection = "up" | "down" | "flat" | "unavailable";
 type Metric = { value: number | null; date: string | null };
 
@@ -49,6 +36,7 @@ export type EuroAreaForwardSurveyIndicator = {
   shortTermDirection: TrendDirection;
   mediumTermDirection: TrendDirection;
   historyCount: number;
+  recentHistory: { date: string; value: number }[];
   lastUpdated: string | null;
   error: string | null;
 };
@@ -144,7 +132,7 @@ function offsetMonth(month: string, offset: number) {
 
 function offsetQuarter(quarter: string, offset: number) {
   const [year, q] = quarter.split("-Q").map(Number);
-  const date = (year! * 4) + q! - 1 + offset;
+  const date = year! * 4 + q! - 1 + offset;
   return `${Math.floor(date / 4)}-Q${(date % 4) + 1}`;
 }
 
@@ -191,10 +179,9 @@ function quarterMetrics(series: EurostatGrowthSeries | null) {
   };
 }
 
-function monthlyMetrics(series: EurostatGrowthSeries | null): Omit<
-  MonthlyActivity,
-  "freshness" | "series" | "error"
-> {
+function monthlyMetrics(
+  series: EurostatGrowthSeries | null,
+): Omit<MonthlyActivity, "freshness" | "series" | "error"> {
   const byMonth = observationMap(series);
   const latest = series?.observations.at(-1);
   const date = latest?.date ?? null;
@@ -308,7 +295,7 @@ function balanceChangeScore(value: number | null, threshold: number, strongThres
 
 function unavailableForwardIndicator(
   id: EurostatEcSurveyId,
-  error: string | null
+  error: string | null,
 ): EuroAreaForwardSurveyIndicator {
   const labelById: Record<EurostatEcSurveyId, string> = {
     "BS-IOB": "Manufacturing order-book assessment",
@@ -332,6 +319,7 @@ function unavailableForwardIndicator(
     shortTermDirection: "unavailable",
     mediumTermDirection: "unavailable",
     historyCount: 0,
+    recentHistory: [],
     lastUpdated: null,
     error,
   };
@@ -340,7 +328,7 @@ function unavailableForwardIndicator(
 function buildForwardIndicator(
   id: EurostatEcSurveyId,
   series: EurostatEcSurveySeries | null,
-  error: string | null
+  error: string | null,
 ): EuroAreaForwardSurveyIndicator {
   if (!series) return unavailableForwardIndicator(id, error);
   const byMonth = new Map(series.observations.map((item) => [item.date, item.value]));
@@ -363,37 +351,38 @@ function buildForwardIndicator(
     latest: metric(latest ? round(latest.value) : null, date),
     recentChange: metric(
       latestIsCurrent ? (previous === undefined ? null : round(latest.value - previous)) : null,
-      date
+      date,
     ),
     shortTermChange: metric(
-      latestIsCurrent ? (threeMonthsAgo === undefined ? null : round(latest.value - threeMonthsAgo)) : null,
-      date
+      latestIsCurrent
+        ? threeMonthsAgo === undefined
+          ? null
+          : round(latest.value - threeMonthsAgo)
+        : null,
+      date,
     ),
     mediumTermChange: metric(
-      latestIsCurrent ? (twelveMonthsAgo === undefined ? null : round(latest.value - twelveMonthsAgo)) : null,
-      date
+      latestIsCurrent
+        ? twelveMonthsAgo === undefined
+          ? null
+          : round(latest.value - twelveMonthsAgo)
+        : null,
+      date,
     ),
     shortTermDirection: latestIsCurrent
-      ? trendDirection(
-          threeMonthsAgo === undefined ? null : latest.value - threeMonthsAgo,
-          2
-        )
+      ? trendDirection(threeMonthsAgo === undefined ? null : latest.value - threeMonthsAgo, 2)
       : "unavailable",
     mediumTermDirection: latestIsCurrent
-      ? trendDirection(
-          twelveMonthsAgo === undefined ? null : latest.value - twelveMonthsAgo,
-          3
-        )
+      ? trendDirection(twelveMonthsAgo === undefined ? null : latest.value - twelveMonthsAgo, 3)
       : "unavailable",
     historyCount: series.observations.length,
+    recentHistory: series.observations.slice(-6),
     lastUpdated: series.lastUpdated,
     error,
   };
 }
 
-function scoreForwardGrowth(
-  indicators: EuroAreaForwardSurveyIndicator[]
-) {
+function scoreForwardGrowth(indicators: EuroAreaForwardSurveyIndicator[]) {
   const indicatorWeights: Record<EurostatEcSurveyId, number> = {
     "BS-IOB": 1.5,
     "BS-IPE": 2,
@@ -405,29 +394,17 @@ function scoreForwardGrowth(
       { label: "Current balance", score: balanceLevelScore(current), weight: 1.25 },
       {
         label: "Latest monthly change",
-        score: balanceChangeScore(
-          indicator.recentChange.value,
-          1,
-          4
-        ),
+        score: balanceChangeScore(indicator.recentChange.value, 1, 4),
         weight: 0.75,
       },
       {
         label: "Three-month change",
-        score: balanceChangeScore(
-          indicator.shortTermChange.value,
-          2,
-          6
-        ),
+        score: balanceChangeScore(indicator.shortTermChange.value, 2, 6),
         weight: 1,
       },
       {
         label: "Twelve-month change",
-        score: balanceChangeScore(
-          indicator.mediumTermChange.value,
-          3,
-          10
-        ),
+        score: balanceChangeScore(indicator.mediumTermChange.value, 3, 10),
         weight: 1,
       },
     ]);
@@ -440,10 +417,14 @@ function scoreForwardGrowth(
   const score = weightedScore(signals);
   if (score === null) return { growth: "UNAVAILABLE" as const, score, signals };
   const growth: EuroForwardGrowth =
-    score >= 1.25 ? "STRONGLY POSITIVE"
-      : score >= 0.35 ? "POSITIVE"
-        : score <= -1.25 ? "STRONGLY NEGATIVE"
-          : score <= -0.35 ? "NEGATIVE"
+    score >= 1.25
+      ? "STRONGLY POSITIVE"
+      : score >= 0.35
+        ? "POSITIVE"
+        : score <= -1.25
+          ? "STRONGLY NEGATIVE"
+          : score <= -0.35
+            ? "NEGATIVE"
             : "NEUTRAL";
   return { growth, score, signals };
 }
@@ -454,7 +435,7 @@ function drivers(signals: Signal[], positive: boolean) {
     .sort((left, right) =>
       positive
         ? right.score! * right.weight - left.score! * left.weight
-        : left.score! * left.weight - right.score! * right.weight
+        : left.score! * left.weight - right.score! * right.weight,
     )
     .slice(0, 3)
     .map((signal) => signal.label);
@@ -467,7 +448,7 @@ function errorExplanation(label: string, error: string | null) {
 function seriesExplanation(
   label: string,
   series: EurostatGrowthSeries | null,
-  error: string | null
+  error: string | null,
 ) {
   if (error) return errorExplanation(label, error)!;
   if (!series) return `${label} data is unavailable.`;
@@ -520,45 +501,41 @@ export function calculateEuroAreaGrowthState({
   const stateSignals: Signal[] = [
     {
       label: "Real GDP",
-      score: growthRateScore(
-        usable(gdpMetrics.latest.qoqAnnualized.value, gdpFreshness),
-        "Q"
-      ),
+      score: growthRateScore(usable(gdpMetrics.latest.qoqAnnualized.value, gdpFreshness), "Q"),
       weight: CURRENT_STATE_WEIGHTS.gdp,
     },
     {
       label: "Household consumption",
       score: growthRateScore(
         usable(consumptionMetrics.latest.qoqAnnualized.value, consumptionFreshness),
-        "Q"
+        "Q",
       ),
       weight: CURRENT_STATE_WEIGHTS.householdConsumption,
     },
     {
       label: "Industrial production",
-      score: growthRateScore(
-        usable(industryMetrics.latest.yoy.value, industryFreshness),
-        "Y"
-      ),
+      score: growthRateScore(usable(industryMetrics.latest.yoy.value, industryFreshness), "Y"),
       weight: CURRENT_STATE_WEIGHTS.industrialProduction,
     },
     {
       label: "Retail sales",
-      score: growthRateScore(
-        usable(retailMetrics.latest.yoy.value, retailFreshness),
-        "Y"
-      ),
+      score: growthRateScore(usable(retailMetrics.latest.yoy.value, retailFreshness), "Y"),
       weight: CURRENT_STATE_WEIGHTS.retailSales,
     },
   ];
   const stateScore = weightedScore(stateSignals);
   const strongSignals = stateSignals.filter((signal) => signal.score !== null && signal.score >= 2);
   const currentState: EuroGrowthState =
-    stateScore === null ? "UNAVAILABLE"
-      : stateScore >= 1.5 && strongSignals.length >= 3 ? "STRONG EXPANSION"
-        : stateScore >= 0.6 ? "EXPANSION"
-          : stateScore >= 0.15 ? "WEAK EXPANSION"
-            : stateScore > -0.35 ? "STAGNATION"
+    stateScore === null
+      ? "UNAVAILABLE"
+      : stateScore >= 1.5 && strongSignals.length >= 3
+        ? "STRONG EXPANSION"
+        : stateScore >= 0.6
+          ? "EXPANSION"
+          : stateScore >= 0.15
+            ? "WEAK EXPANSION"
+            : stateScore > -0.35
+              ? "STAGNATION"
               : "CONTRACTION";
 
   const currentGdpRate = usable(gdpMetrics.latest.qoqAnnualized.value, gdpFreshness);
@@ -570,14 +547,11 @@ export function calculateEuroAreaGrowthState({
   const previousPreviousGdpValue = latestGdpDate
     ? gdpByQuarter.get(offsetQuarter(latestGdpDate, -2))
     : undefined;
-  const previousGdpRate = qoqAnnualized(
-    previousGdpValue,
-    previousPreviousGdpValue
-  );
+  const previousGdpRate = qoqAnnualized(previousGdpValue, previousPreviousGdpValue);
 
   const currentConsumptionRate = usable(
     consumptionMetrics.latest.qoqAnnualized.value,
-    consumptionFreshness
+    consumptionFreshness,
   );
   const consumptionByQuarter = observationMap(householdConsumptionSeries);
   const latestConsumptionDate = householdConsumptionSeries?.observations.at(-1)?.date;
@@ -587,21 +561,23 @@ export function calculateEuroAreaGrowthState({
       : undefined,
     latestConsumptionDate
       ? consumptionByQuarter.get(offsetQuarter(latestConsumptionDate, -2))
-      : undefined
+      : undefined,
   );
   const momentumSignals: Signal[] = [
     {
       label: "GDP growth rate",
-      score: currentGdpRate === null || gdpFreshness !== "current"
-        ? null
-        : changeScore(currentGdpRate, previousGdpRate),
+      score:
+        currentGdpRate === null || gdpFreshness !== "current"
+          ? null
+          : changeScore(currentGdpRate, previousGdpRate),
       weight: 2,
     },
     {
       label: "Household consumption growth rate",
-      score: currentConsumptionRate === null || consumptionFreshness !== "current"
-        ? null
-        : changeScore(currentConsumptionRate, consumptionPreviousRate),
+      score:
+        currentConsumptionRate === null || consumptionFreshness !== "current"
+          ? null
+          : changeScore(currentConsumptionRate, consumptionPreviousRate),
       weight: 1.5,
     },
     {
@@ -630,17 +606,17 @@ export function calculateEuroAreaGrowthState({
   const orderBooks = buildForwardIndicator(
     "BS-IOB",
     manufacturingOrderBooks,
-    surveyErrors["BS-IOB"] ?? null
+    surveyErrors["BS-IOB"] ?? null,
   );
   const productionExpectations = buildForwardIndicator(
     "BS-IPE",
     manufacturingProductionExpectations,
-    surveyErrors["BS-IPE"] ?? null
+    surveyErrors["BS-IPE"] ?? null,
   );
   const servicesExpectations = buildForwardIndicator(
     "BS-SAEM",
     servicesDemandExpectations,
-    surveyErrors["BS-SAEM"] ?? null
+    surveyErrors["BS-SAEM"] ?? null,
   );
   const forwardIndicators = [orderBooks, productionExpectations, servicesExpectations];
   const forwardResult = scoreForwardGrowth(forwardIndicators);
@@ -653,12 +629,12 @@ export function calculateEuroAreaGrowthState({
     seriesExplanation(
       "Household consumption",
       householdConsumptionSeries,
-      errors.P31_S14_S15 ?? null
+      errors.P31_S14_S15 ?? null,
     ),
     seriesExplanation(
       "Industrial production",
       industrialProductionSeries,
-      errors.INDUSTRIAL_PRODUCTION ?? null
+      errors.INDUSTRIAL_PRODUCTION ?? null,
     ),
     seriesExplanation("Retail sales", retailSalesSeries, errors.RETAIL_VOLUME ?? null),
     ...forwardIndicators.map(forwardIndicatorExplanation),
@@ -674,10 +650,12 @@ export function calculateEuroAreaGrowthState({
     .map(([, label]) => label);
   const currentSeriesCount = freshSeriesNames.length;
   const availableForwardIndicators = forwardIndicators.filter(
-    (indicator) => indicator.status === "available" && indicator.freshness === "current"
+    (indicator) => indicator.status === "available" && indicator.freshness === "current",
   ).length;
-  const hasAnySeries = [gdpSeries, householdConsumptionSeries, industrialProductionSeries, retailSalesSeries]
-    .some((series) => series !== null) || forwardIndicators.some((indicator) => indicator.status === "available");
+  const hasAnySeries =
+    [gdpSeries, householdConsumptionSeries, industrialProductionSeries, retailSalesSeries].some(
+      (series) => series !== null,
+    ) || forwardIndicators.some((indicator) => indicator.status === "available");
   const status =
     currentSeriesCount === 4 && availableForwardIndicators === 3
       ? "available"
@@ -693,15 +671,18 @@ export function calculateEuroAreaGrowthState({
       momentum,
       forwardGrowth: forwardResult.growth,
       explanation: {
-        currentState: stateScore === null
-          ? "Current Euro Area growth state is unavailable because there are no fresh activity indicators."
-          : `${currentState} uses fresh data for ${freshSeriesNames.join(", ")}.${positiveDrivers[0] ? ` Strongest positive: ${positiveDrivers[0]}.` : ""}${negativeDrivers[0] ? ` Weakest: ${negativeDrivers[0]}.` : ""}`,
-        momentum: momentumScore === null
-          ? "Growth momentum is unavailable because there are no fresh comparable changes."
-          : `${momentum} reflects changes in quarterly growth rates and the 3- and 6-month direction of monthly activity.`,
-        forwardGrowth: forwardResult.growth === "UNAVAILABLE"
-          ? "Forward Growth is unavailable because no fresh verified European Commission business survey indicators are available."
-          : `${forwardResult.growth} reflects the levels and recent changes in available European Commission manufacturing order books, manufacturing production expectations, and services demand expectations.`,
+        currentState:
+          stateScore === null
+            ? "Current Euro Area growth state is unavailable because there are no fresh activity indicators."
+            : `${currentState} uses fresh data for ${freshSeriesNames.join(", ")}.${positiveDrivers[0] ? ` Strongest positive: ${positiveDrivers[0]}.` : ""}${negativeDrivers[0] ? ` Weakest: ${negativeDrivers[0]}.` : ""}`,
+        momentum:
+          momentumScore === null
+            ? "Growth momentum is unavailable because there are no fresh comparable changes."
+            : `${momentum} reflects changes in quarterly growth rates and the 3- and 6-month direction of monthly activity.`,
+        forwardGrowth:
+          forwardResult.growth === "UNAVAILABLE"
+            ? "Forward Growth is unavailable because no fresh verified European Commission business survey indicators are available."
+            : `${forwardResult.growth} reflects the levels and recent changes in available European Commission manufacturing order books, manufacturing production expectations, and services demand expectations.`,
       },
       positiveDrivers: [...new Set([...positiveDrivers, ...forwardPositive])].slice(0, 3),
       negativeDrivers: [...new Set([...negativeDrivers, ...forwardNegative])].slice(0, 3),

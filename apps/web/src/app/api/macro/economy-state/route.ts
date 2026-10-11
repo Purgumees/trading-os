@@ -1227,6 +1227,7 @@ export async function GET() {
         ).reverse(),
       },
       initialJoblessClaims: {
+        recentHistory: initialClaimsData.slice(0, 13).reverse(),
         series: "ICSA",
         source: "FRED",
         unit: "claims",

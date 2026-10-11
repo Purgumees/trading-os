@@ -62,10 +62,7 @@ export type CurveDirection = "STEEPENING" | "FLATTENING" | "STABLE" | "UNAVAILAB
 
 export type YieldObservation = DatedObservation;
 
-type YieldObservationMap = Record<
-  TreasuryMaturity,
-  YieldObservation[]
->;
+type YieldObservationMap = Record<TreasuryMaturity, YieldObservation[]>;
 
 type CalibrationMetadata = {
   method: "historical" | "fallback" | "unavailable";
@@ -112,6 +109,7 @@ export type UsRatesYieldCurveResult = {
   unit: "percent yield; changes and spreads in basis points";
   generatedAt: string;
   historyLimitPerSeries: number;
+  recentHistory: Record<TreasuryMaturity, YieldObservation[]>;
   maturities: Record<TreasuryMaturity, YieldMaturityResult>;
   yieldCurve: {
     "2Y-10Y": YieldCurveResult;
@@ -134,15 +132,13 @@ export type UsRatesYieldCurveResult = {
   };
 };
 
-const HORIZON_SETTINGS: Record<
-  YieldHorizon,
-  { calendarDays: number; maxLagCalendarDays: number }
-> = {
-  oneDay: { calendarDays: 0, maxLagCalendarDays: 7 },
-  oneWeek: { calendarDays: 7, maxLagCalendarDays: 4 },
-  oneMonth: { calendarDays: 30, maxLagCalendarDays: 10 },
-  threeMonths: { calendarDays: 90, maxLagCalendarDays: 14 },
-};
+const HORIZON_SETTINGS: Record<YieldHorizon, { calendarDays: number; maxLagCalendarDays: number }> =
+  {
+    oneDay: { calendarDays: 0, maxLagCalendarDays: 7 },
+    oneWeek: { calendarDays: 7, maxLagCalendarDays: 4 },
+    oneMonth: { calendarDays: 30, maxLagCalendarDays: 10 },
+    threeMonths: { calendarDays: 90, maxLagCalendarDays: 14 },
+  };
 
 const CURVE_HORIZONS = ["oneDay", "oneWeek", "oneMonth"] as const;
 const YIELD_HORIZONS = ["oneDay", "oneWeek", "oneMonth", "threeMonths"] as const;
@@ -177,7 +173,7 @@ function targetDate(date: string, horizon: YieldHorizon) {
     parsed.setUTCDate(1);
     parsed.setUTCMonth(parsed.getUTCMonth() - months);
     const lastDay = new Date(
-      Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth() + 1, 0)
+      Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth() + 1, 0),
     ).getUTCDate();
     parsed.setUTCDate(Math.min(day, lastDay));
   } else {
@@ -189,13 +185,12 @@ function targetDate(date: string, horizon: YieldHorizon) {
 function selectObservationAtOrBefore(
   observationsNewestFirst: YieldObservation[],
   target: string,
-  maxLagCalendarDays: number
+  maxLagCalendarDays: number,
 ) {
   const selected = observationsNewestFirst.find((item) => item.date <= target);
   if (!selected) return null;
   const lag =
-    (new Date(`${target}T00:00:00Z`).getTime() -
-      new Date(`${selected.date}T00:00:00Z`).getTime()) /
+    (new Date(`${target}T00:00:00Z`).getTime() - new Date(`${selected.date}T00:00:00Z`).getTime()) /
     86400000;
   return lag <= maxLagCalendarDays ? selected : null;
 }
@@ -203,7 +198,7 @@ function selectObservationAtOrBefore(
 function selectSnapshot(
   observationsNewestFirst: YieldObservation[],
   horizon: YieldHorizon,
-  now: Date
+  now: Date,
 ) {
   const latest = observationsNewestFirst[0];
   if (!latest) return null;
@@ -225,14 +220,14 @@ function selectSnapshot(
   const selected = selectObservationAtOrBefore(
     observationsNewestFirst,
     target,
-    HORIZON_SETTINGS[horizon].maxLagCalendarDays
+    HORIZON_SETTINGS[horizon].maxLagCalendarDays,
   );
   return selected;
 }
 
 export function calculateBasisPointChange(
   currentYieldPercent: number | null,
-  previousYieldPercent: number | null
+  previousYieldPercent: number | null,
 ) {
   if (
     currentYieldPercent === null ||
@@ -248,7 +243,7 @@ export function calculateBasisPointChange(
 function findHistoricalComparison(
   observationsNewestFirst: YieldObservation[],
   currentIndex: number,
-  horizon: YieldHorizon
+  horizon: YieldHorizon,
 ) {
   const current = observationsNewestFirst[currentIndex];
   if (!current) return null;
@@ -257,13 +252,13 @@ function findHistoricalComparison(
   return selectObservationAtOrBefore(
     observationsNewestFirst.slice(currentIndex + 1),
     target,
-    HORIZON_SETTINGS[horizon].maxLagCalendarDays
+    HORIZON_SETTINGS[horizon].maxLagCalendarDays,
   );
 }
 
 function historicalChanges(
   observationsNewestFirst: YieldObservation[],
-  horizon: YieldHorizon
+  horizon: YieldHorizon,
 ): DatedChange[] {
   const changes: DatedChange[] = [];
   for (let index = 0; index < observationsNewestFirst.length; index++) {
@@ -300,21 +295,17 @@ function calibrateYieldMove(
   latestMove: number,
   latestDate: string,
   historicalChangesNewestFirst: DatedChange[],
-  fallbackThresholds: { moderate: number; strong: number }
+  fallbackThresholds: { moderate: number; strong: number },
 ) {
   const asOf = new Date(`${latestDate}T00:00:00Z`);
   const oldestDate = new Date(asOf);
   oldestDate.setUTCFullYear(
-    oldestDate.getUTCFullYear() - US_RATES_CALIBRATION_CONFIG.historicalWindowYears
+    oldestDate.getUTCFullYear() - US_RATES_CALIBRATION_CONFIG.historicalWindowYears,
   );
   const sample = historicalChangesNewestFirst
     .filter((change) => {
       const date = new Date(`${change.date}T00:00:00Z`);
-      return (
-        date < asOf &&
-        date >= oldestDate &&
-        Number.isFinite(change.value)
-      );
+      return date < asOf && date >= oldestDate && Number.isFinite(change.value);
     })
     .map((change) => change.value);
 
@@ -364,7 +355,7 @@ function buildCurveDateSeries(observations: YieldObservationMap) {
     Object.entries(observations).map(([maturity, rows]) => [
       maturity,
       new Map(rows.map((observation) => [observation.date, observation.value])),
-    ])
+    ]),
   ) as Record<TreasuryMaturity, Map<string, number>>;
   const commonDates = [...seriesMaps["2Y"].keys()]
     .filter((date) => Object.values(seriesMaps).every((series) => series.has(date)))
@@ -383,14 +374,11 @@ function buildCurveDateSeries(observations: YieldObservationMap) {
 function buildCurveResult(
   curveDates: ReturnType<typeof buildCurveDateSeries>,
   shortMaturity: "2Y" | "5Y",
-  longMaturity: "10Y" | "30Y"
+  longMaturity: "10Y" | "30Y",
 ): YieldCurveResult {
   const latest = curveDates[0];
   const currentSpread = latest
-    ? calculateBasisPointChange(
-        latest.values[longMaturity],
-        latest.values[shortMaturity]
-      )
+    ? calculateBasisPointChange(latest.values[longMaturity], latest.values[shortMaturity])
     : null;
   const changes = {} as YieldCurveResult["changes"];
   for (const horizon of CURVE_HORIZONS) {
@@ -403,7 +391,7 @@ function buildCurveResult(
         comparison = selectObservationAtOrBefore(
           curveDates.map((row) => ({ date: row.date, value: 0 })),
           target,
-          HORIZON_SETTINGS[horizon].maxLagCalendarDays
+          HORIZON_SETTINGS[horizon].maxLagCalendarDays,
         );
         if (comparison) {
           comparison = curveDates.find((row) => row.date === comparison!.date) ?? null;
@@ -415,7 +403,7 @@ function buildCurveResult(
         ? null
         : calculateBasisPointChange(
             comparison.values[longMaturity],
-            comparison.values[shortMaturity]
+            comparison.values[shortMaturity],
           );
     const change =
       currentSpread === null || priorSpread === null
@@ -456,9 +444,9 @@ export function calculateUsRatesYieldCurve({
     (Object.keys(US_TREASURY_SERIES) as TreasuryMaturity[]).map((maturity) => [
       maturity,
       normalizeObservations(observations[maturity] ?? []).filter(
-        (observation) => observation.date <= asOfDate
+        (observation) => observation.date <= asOfDate,
       ),
-    ])
+    ]),
   ) as YieldObservationMap;
 
   const maturities = {} as UsRatesYieldCurveResult["maturities"];
@@ -469,7 +457,7 @@ export function calculateUsRatesYieldCurve({
       ? Math.floor(
           (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) -
             new Date(`${latest.date}T00:00:00Z`).getTime()) /
-            86400000
+            86400000,
         )
       : null;
     const changes = {} as Record<YieldHorizon, YieldChange>;
@@ -477,7 +465,7 @@ export function calculateUsRatesYieldCurve({
       const comparison = selectSnapshot(series, horizon, now);
       const changeBasisPoints = calculateBasisPointChange(
         latest?.value ?? null,
-        comparison?.value ?? null
+        comparison?.value ?? null,
       );
       if (changeBasisPoints === null || !latest || !comparison) {
         changes[horizon] = unavailableChange();
@@ -487,7 +475,7 @@ export function calculateUsRatesYieldCurve({
         changeBasisPoints,
         latest.date,
         historicalChanges(series, horizon),
-        US_RATES_CALIBRATION_CONFIG.fallbackThresholdsBasisPoints[maturity][horizon]
+        US_RATES_CALIBRATION_CONFIG.fallbackThresholdsBasisPoints[maturity][horizon],
       );
       const classified = scoreDirection(calibration.score);
       changes[horizon] = {
@@ -510,11 +498,7 @@ export function calculateUsRatesYieldCurve({
         value: latest?.value ?? null,
         date: latest?.date ?? null,
         status:
-          latest === null
-            ? "unavailable"
-            : ageDays !== null && ageDays > 7
-              ? "stale"
-              : "current",
+          latest === null ? "unavailable" : ageDays !== null && ageDays > 7 ? "stale" : "current",
         ageDays,
       },
       changes,
@@ -557,18 +541,18 @@ export function calculateUsRatesYieldCurve({
       change: maturities[maturity].changes.oneDay.changeBasisPoints,
     }))
     .filter(
-      (entry): entry is { maturity: TreasuryMaturity; change: number } =>
-        entry.change !== null
+      (entry): entry is { maturity: TreasuryMaturity; change: number } => entry.change !== null,
     );
-  const largest = dailyMoves.sort(
-    (a, b) => Math.abs(b.change) - Math.abs(a.change)
-  )[0];
+  const largest = dailyMoves.sort((a, b) => Math.abs(b.change) - Math.abs(a.change))[0];
 
   return {
     source: "FRED",
     unit: "percent yield; changes and spreads in basis points",
     generatedAt: now.toISOString(),
     historyLimitPerSeries: US_RATES_CALIBRATION_CONFIG.historyLimit,
+    recentHistory: Object.fromEntries(
+      Object.entries(normalized).map(([key, rows]) => [key, rows.slice(0, 66).reverse()]),
+    ) as YieldObservationMap,
     maturities,
     yieldCurve,
     summary: {

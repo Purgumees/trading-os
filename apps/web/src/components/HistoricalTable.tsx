@@ -5,6 +5,7 @@
  * Shows most recent N observations in chronological order (oldest → newest)
  */
 
+import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import type { ReactNode } from "react";
 
 export type HistoricalRowData = {
@@ -27,18 +28,9 @@ export type HistoricalTableProps = {
   children?: ReactNode;
 };
 
-export function HistoricalTable({
-  title,
-  columns,
-  rows,
-  compact = true,
-}: HistoricalTableProps) {
+export function HistoricalTable({ title, columns, rows, compact = true }: HistoricalTableProps) {
   if (rows.length === 0) {
-    return (
-      <div className="text-xs text-gray-500">
-        {title} — No historical data available
-      </div>
-    );
+    return <div className="text-xs text-gray-500">{title} — No historical data available</div>;
   }
 
   const textSizeClass = compact ? "text-xs" : "text-sm";
@@ -46,6 +38,15 @@ export function HistoricalTable({
 
   return (
     <div className="mt-2 overflow-x-auto border border-gray-700 rounded">
+      <MacroHistoryChart
+        title={title ?? "History"}
+        rows={rows}
+        series={columns
+          .filter(
+            (col) => col.key !== "date" && rows.some((row) => typeof row[col.key] === "number"),
+          )
+          .map((col) => ({ key: col.key, label: col.label }))}
+      />
       <table className={`w-full ${textSizeClass}`}>
         {title && (
           <caption className="text-left py-2 px-3 text-gray-400 text-xs font-semibold bg-gray-900/50">
@@ -58,11 +59,7 @@ export function HistoricalTable({
               <th
                 key={col.key}
                 className={`${paddingClass} text-left text-gray-400 font-semibold ${
-                  col.align === "right"
-                    ? "text-right"
-                    : col.align === "center"
-                      ? "text-center"
-                      : ""
+                  col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : ""
                 }`}
               >
                 {col.label}
@@ -74,7 +71,7 @@ export function HistoricalTable({
           {rows.map((row, idx) => (
             <tr
               key={`${row.date}-${idx}`}
-              className="border-b border-gray-800 hover:bg-gray-900/50 transition-colors"
+              className={`border-b border-gray-800 hover:bg-gray-900/50 transition-colors ${idx === rows.length - 1 ? "bg-amber-500/10 font-semibold" : ""}`}
             >
               {columns.map((col) => {
                 const value = row[col.key];
@@ -91,6 +88,7 @@ export function HistoricalTable({
                     }`}
                   >
                     {formatted}
+                    {col.key === "date" && idx === rows.length - 1 ? " ◆" : ""}
                   </td>
                 );
               })}

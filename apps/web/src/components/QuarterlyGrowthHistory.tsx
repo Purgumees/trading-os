@@ -1,3 +1,4 @@
+import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { quarterlyGrowthHistory } from "@/lib/quarterly-growth-history";
 const percent = (value: number | null) =>
   value === null ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
@@ -25,6 +26,15 @@ export function QuarterlyGrowthHistory({
           not a full-year growth rate.
         </p>
       </div>
+      <MacroHistoryChart
+        title={`${label} growth`}
+        unit="%"
+        rows={history.rows}
+        series={[
+          { key: "qoq", label: "QoQ growth" },
+          { key: "yoy", label: "YoY growth" },
+        ]}
+      />
       <div className="mt-3 overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <caption className="px-3 py-2 text-left text-xs text-muted-foreground">
@@ -41,9 +51,12 @@ export function QuarterlyGrowthHistory({
             {history.rows.map((row) => (
               <tr
                 key={row.date}
-                className={`border-b last:border-0 ${row.date.startsWith(String(history.year)) ? "bg-muted/40" : ""}`}
+                className={`border-b last:border-0 ${row.date === history.latestQuarter ? "font-semibold bg-amber-500/10" : ""} ${row.date.startsWith(String(history.year)) ? "bg-muted/40" : ""}`}
               >
-                <th className="p-2 text-left font-medium">{row.date}</th>
+                <th className="p-2 text-left font-medium">
+                  {row.date}
+                  {row.date === history.latestQuarter ? " ◆" : ""}
+                </th>
                 <td className="p-2 text-right tabular-nums">{percent(row.qoq)}</td>
                 <td className="p-2 text-right tabular-nums">{percent(row.yoy)}</td>
               </tr>
