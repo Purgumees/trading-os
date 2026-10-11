@@ -37,12 +37,24 @@ export async function internationalYields(country:Country):Promise<YieldData>{
    const columns=[find('INM.DG102.NZZCF'),find('INM.DG110.NZZCF'),-1];if(columns[0]!<0||columns[1]!<0)throw Error('RBNZ maturity series unavailable');
    result.rows=excelRows(sheet,columns,6);result.definition="New Zealand RBNZ B2 · 2Y and 10Y secondary-market government yields";result.note+=" A constant 30Y series is not supplied; individual dated bonds are not substituted for it.";
   }else{
-   const zipped=new Uint8Array(await(await download('https://www.bankofengland.co.uk/-/media/boe/files/statistics/yield-curves/latest-yield-curve-data.zip')).arrayBuffer());
-   const files=unzipSync(zipped),name=Object.keys(files).find(n=>n==='GLC Nominal daily data current month.xlsx');if(!name)throw Error('BOE nominal workbook unavailable');
-   const w=await workbook(files[name]!),sheet=w.getWorksheet('4. spot curve');if(!sheet)throw Error('BOE nominal spot sheet unavailable');
-   const find=(years:number)=>{let column=-1;sheet.getRow(4).eachCell((cell,index)=>{if(typeof cell.value==='number'&&Math.abs(cell.value-years)<0.001)column=index;});return column;};
-   const columns=[2,10,30].map(find);if(columns.some(c=>c<0))throw Error('BOE maturities unavailable');result.rows=excelRows(sheet,columns,6);
-   result.definition="UK BOE · fitted nominal gilt spot yields (zero-coupon curve), not benchmark bond yields";result.note+=" Current-month archive only. These model-fitted spot rates should not be treated as the same series as US Treasury constant-maturity yields.";
+   const root='https://www.bankofengland.co.uk/-/media/boe/files/statistics/yield-curves/';
+   const archives=await Promise.allSettled([
+    download(`${root}latest-yield-curve-data.zip`).then(r=>r.arrayBuffer()),
+    download(`${root}glcnominalddata.zip`).then(r=>r.arrayBuffer()),
+   ]);
+   const rows:YieldRow[]=[];
+   for(const archive of [...archives].reverse()){
+    if(archive.status!=='fulfilled')continue;
+    const files=unzipSync(new Uint8Array(archive.value),{filter:file=>file.name==='GLC Nominal daily data current month.xlsx'||/^GLC Nominal daily data_\d{4} to present\.xlsx$/.test(file.name)});
+    for(const bytes of Object.values(files)){
+     const w=await workbook(bytes),sheet=w.getWorksheet('4. spot curve');if(!sheet)continue;
+     const find=(years:number)=>{let column=-1;sheet.getRow(4).eachCell((cell,index)=>{if(typeof cell.value==='number'&&Math.abs(cell.value-years)<0.001)column=index;});return column;};
+     const columns=[2,10,30].map(find);if(columns.some(c=>c<0))continue;rows.push(...excelRows(sheet,columns,6));
+    }
+   }
+   result.rows=sortYields(rows);
+   result.definition="UK BOE · fitted nominal gilt spot yields (zero-coupon curve), not benchmark bond yields";result.note+=" Official historical archive plus current-month observations. These model-fitted spot rates should not be treated as the same series as US Treasury constant-maturity yields.";
+   if(archives[1].status==='rejected')result.note+=" Historical archive refresh unavailable; longer comparisons may be missing.";
   }
   if(!result.rows.length)throw Error('No valid yield observations');
  }catch(e){
