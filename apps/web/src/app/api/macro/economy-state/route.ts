@@ -80,6 +80,7 @@ async function getFredObservations(seriesId: string, limit = 24) {
 
   const response = await fetch(url, {
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
@@ -131,52 +132,17 @@ function getSettledTreasuryObservations(
 }
 
 function calculateYoY(observations: { date: string; value: number }[]) {
-  if (observations.length < 13) {
-    return null;
-  }
-
-  const current = observations[0]!;
-  const yearAgo = observations[12]!;
-
-  if (yearAgo.value === 0) {
-    return null;
-  }
-
-  const yoy = ((current.value - yearAgo.value) / yearAgo.value) * 100;
-
-  if (!Number.isFinite(yoy)) {
-    return null;
-  }
-
-  return {
-    value: Number(yoy.toFixed(2)),
-    date: current.date,
-  };
+  const metric = calculateYoYAt(observations);
+  return metric.value === null ? null : metric;
 }
 
 function calculateYoYAt(
   observations: { date: string; value: number }[],
   monthsAgo = 0,
 ): InflationMetric {
-  const comparisonIndex = monthsAgo + 12;
-
-  if (observations.length <= comparisonIndex) {
-    return { value: null, date: null };
-  }
-
-  const current = observations[monthsAgo];
-  const yearAgo = observations[comparisonIndex];
-
-  if (!current || !yearAgo || yearAgo.value === 0) {
-    return { value: null, date: current?.date ?? null };
-  }
-
-  const yoy = ((current.value - yearAgo.value) / yearAgo.value) * 100;
-
-  return {
-    value: Number.isFinite(yoy) ? Number(yoy.toFixed(2)) : null,
-    date: current.date,
-  };
+  // Match calendar months, not array positions: missing months must never shift YoY.
+  const observation = buildInflationMonthlyHistory(observations, monthsAgo + 1)[0];
+  return { value: observation?.yoy ?? null, date: observation?.date ?? null };
 }
 
 function calculateMomAt(
@@ -187,8 +153,8 @@ function calculateMomAt(
     return { value: null, date: null };
   }
 
-  const current = observations[offset];
-  const previous = observations[offset + 1];
+  const current = getMonthlyObservationAt(observations, offset);
+  const previous = getMonthlyObservationAt(observations, offset + 1);
 
   if (!current || !previous || previous.value === 0) {
     return { value: null, date: current?.date ?? null };
@@ -232,7 +198,7 @@ function calculateAnnualized3m(observations: { date: string; value: number }[]):
   }
 
   const current = observations[0];
-  const threeMonthsAgo = observations[3];
+  const threeMonthsAgo = getMonthlyObservationAt(observations, 3);
 
   if (!current || !threeMonthsAgo || threeMonthsAgo.value === 0) {
     return { value: null, date: current?.date ?? null };
@@ -379,7 +345,7 @@ function calculateGrowthHistory(
   limit = 8,
 ) {
   return observations.slice(0, limit).map((current, index, arr) => {
-    const previous = arr[index + 1] ?? null;
+    const previous = observations[index + 1] ?? null;
     const yearAgo = observations[index + periodsPerYear] ?? null;
 
     return {
@@ -875,7 +841,7 @@ async function fetchLatestIsmServicesReport(): Promise<IsmServicesReport | null>
 
 function buildQuarterlyHistory(observations: { date: string; value: number }[], limit = 8) {
   return observations.slice(0, Math.min(observations.length, limit)).map((current, index, arr) => {
-    const previous = arr[index + 1] ?? null;
+    const previous = observations[index + 1] ?? null;
     const yearAgo = arr[index + 4] ?? null;
 
     return {
@@ -893,31 +859,11 @@ type DatedMetric = {
 };
 
 function getMonthlyObservationAt(observations: { date: string; value: number }[], offset: number) {
-  if (!Number.isInteger(offset) || offset < 0 || !observations[offset]) {
-    return null;
-  }
-
-  for (let index = 0; index < offset; index++) {
-    const newer = observations[index];
-    const older = observations[index + 1];
-
-    if (!newer || !older) {
-      return null;
-    }
-
-    const newerDate = new Date(`${newer.date}T00:00:00Z`);
-    const olderDate = new Date(`${older.date}T00:00:00Z`);
-    const monthDifference =
-      newerDate.getUTCFullYear() * 12 +
-      newerDate.getUTCMonth() -
-      (olderDate.getUTCFullYear() * 12 + olderDate.getUTCMonth());
-
-    if (!Number.isFinite(monthDifference) || monthDifference !== 1) {
-      return null;
-    }
-  }
-
-  return observations[offset] ?? null;
+  if (!Number.isInteger(offset) || offset < 0 || !observations[0]) return null;
+  const target = new Date(`${observations[0].date.slice(0, 7)}-01T00:00:00Z`);
+  target.setUTCMonth(target.getUTCMonth() - offset);
+  const month = target.toISOString().slice(0, 7);
+  return observations.find((observation) => observation.date.slice(0, 7) === month) ?? null;
 }
 
 function getWeeklyObservationAt(observations: { date: string; value: number }[], offset: number) {
@@ -1032,7 +978,7 @@ export async function GET() {
       getFredObservations("PCEPI", 60),
       getFredObservations("PCEPILFE", 60),
       getFredObservations("GDPC1", 24),
-      getFredObservations("PCECC96", 36),
+      getFredObservations("PCEC96", 36),
       getFredObservations("INDPRO", 36),
       getFredObservations("RRSFS", 36),
       getFredObservations("UNRATE", 90),
@@ -1086,7 +1032,7 @@ export async function GET() {
       source: "FRED",
     });
     const targetLowerByDate = new Map(
-      fedTargetLowerData.map((observation) => [observation.date, observation.value])
+      fedTargetLowerData.map((observation) => [observation.date, observation.value]),
     );
     const policyHistory = fedTargetUpperData.flatMap((observation) => {
       const targetLower = targetLowerByDate.get(observation.date);
@@ -1250,6 +1196,9 @@ export async function GET() {
         previousMonth: unemploymentAtMonth(1),
         threeMonthsAgo: unemploymentAtMonth(3),
         sixMonthsAgo: unemploymentAtMonth(6),
+        recentHistory: Array.from({ length: 6 }, (_, offset) =>
+          unemploymentAtMonth(offset),
+        ).reverse(),
       },
       nonfarmPayrollEmployment: {
         series: "PAYEMS",
@@ -1260,6 +1209,9 @@ export async function GET() {
         previousMonthlyChange: previousPayrollChange,
         averageMonthlyChange3m: calculateAveragePayrollChange(payrollEmploymentData, 3),
         averageMonthlyChange6m: calculateAveragePayrollChange(payrollEmploymentData, 6),
+        recentHistory: Array.from({ length: 6 }, (_, offset) =>
+          calculatePayrollChangeAt(payrollEmploymentData, offset),
+        ).reverse(),
       },
       averageHourlyEarnings: {
         series: "CES0500000003",
@@ -1270,6 +1222,9 @@ export async function GET() {
         latestYoY: hourlyEarningsYoY,
         previousMoM: previousHourlyEarningsChange,
         annualized3m: calculateHourlyEarningsAnnualized3m(hourlyEarningsData),
+        recentHistory: Array.from({ length: 6 }, (_, offset) =>
+          hourlyEarningsMom(offset, 12),
+        ).reverse(),
       },
       initialJoblessClaims: {
         series: "ICSA",
@@ -1299,6 +1254,9 @@ export async function GET() {
         previousMonth: jobOpeningsAtMonth(1),
         threeMonthsAgo: jobOpeningsAtMonth(3),
         sixMonthsAgo: jobOpeningsAtMonth(6),
+        recentHistory: Array.from({ length: 6 }, (_, offset) =>
+          jobOpeningsAtMonth(offset),
+        ).reverse(),
       },
     };
     const labourAssessment = calculateLabourState({

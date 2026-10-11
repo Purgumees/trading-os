@@ -38,6 +38,7 @@ type InflationMetric = {
 };
 
 type InflationDetail = {
+  series: string;
   yoy: {
     current: InflationMetric;
     oneMonthAgo: InflationMetric;
@@ -85,22 +86,30 @@ type EconomyState = {
         yoy: number | null;
       };
       previousQuarter: { date: string | null };
-      recentHistory: Array<{ qoqAnnualized: number | null }>;
+      recentHistory: Array<{
+        date: string;
+        value: number;
+        qoqAnnualized: number | null;
+        yoy: number | null;
+      }>;
     };
     realPce: {
       latest: { mom: number | null; yoy: number | null };
       direction3m: "up" | "down" | "flat";
       direction6m: "up" | "down" | "flat";
+      recentHistory: Array<{ date: string; value: number; mom: number | null; yoy: number | null }>;
     };
     industrialProduction: {
       latest: { mom: number | null; yoy: number | null };
       direction3m: "up" | "down" | "flat";
       direction6m: "up" | "down" | "flat";
+      recentHistory: Array<{ date: string; value: number; mom: number | null; yoy: number | null }>;
     };
     retailSales: {
       latest: { mom: number | null; yoy: number | null };
       direction3m: "up" | "down" | "flat";
       direction6m: "up" | "down" | "flat";
+      recentHistory: Array<{ date: string; value: number; mom: number | null; yoy: number | null }>;
     };
     ismManufacturing: {
       components: {
@@ -120,18 +129,21 @@ type EconomyState = {
     unemploymentRate: {
       latest: Metric;
       previousMonth: Metric;
+      recentHistory: Metric[];
     };
     nonfarmPayrollEmployment: {
       latestMonthlyChange: Metric;
       previousMonthlyChange: Metric;
       averageMonthlyChange3m: Metric;
       averageMonthlyChange6m: Metric;
+      recentHistory: Metric[];
     };
     averageHourlyEarnings: {
       latestMoM: Metric;
       previousMoM: Metric;
       latestYoY: Metric;
       annualized3m: Metric;
+      recentHistory: Metric[];
     };
     initialJoblessClaims: {
       latest: Metric;
@@ -143,6 +155,7 @@ type EconomyState = {
       previousMonth: Metric;
       threeMonthsAgo: Metric;
       sixMonthsAgo: Metric;
+      recentHistory: Metric[];
     };
   };
 };
@@ -236,8 +249,10 @@ function curveDirectionExplanation(direction: string, liveExplanation: string) {
     case "STABLE":
       return "The gap between short- and long-term yields is little changed.";
     case "MIXED":
-      return liveExplanation.match(/The yield curve is mixed\/unclear: (.+)$/)?.[1] ??
-        "2s10s and 2s30s are moving in different directions.";
+      return (
+        liveExplanation.match(/The yield curve is mixed\/unclear: (.+)$/)?.[1] ??
+        "2s10s and 2s30s are moving in different directions."
+      );
     default:
       return "Matched yield-curve changes are unavailable.";
   }
@@ -288,11 +303,11 @@ function formatFreshness(seconds: number | null) {
 function formatMonth(date: string) {
   const parsed = new Date(`${date}T00:00:00Z`);
   return Number.isNaN(parsed.getTime())
-      ? "—"
-      : new Intl.DateTimeFormat("en-US", {
-          month: "short",
-          timeZone: "UTC",
-        }).format(parsed);
+    ? "—"
+    : new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        timeZone: "UTC",
+      }).format(parsed);
 }
 
 function movement(current: number | null, previous: number | null) {
@@ -336,6 +351,38 @@ function ValueCell({ label, value, detail }: { label: string; value: string; det
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-semibold">{value}</p>
       {detail ? <p className="mt-1 text-xs text-muted-foreground">{detail}</p> : null}
+    </div>
+  );
+}
+
+function HistoryTable({
+  title,
+  rows,
+  unit,
+}: {
+  title: string;
+  rows: Array<{ date: string | null | undefined; value: number | null }>;
+  unit: string;
+}) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <caption className="mb-2 text-left text-muted-foreground">{title}</caption>
+        <thead>
+          <tr>
+            <th className="p-2 text-left">Period</th>
+            <th className="p-2 text-right">{unit}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.date ?? index} className="border-t">
+              <td className="p-2">{row.date?.slice(0, 7) ?? "Unavailable"}</td>
+              <td className="p-2 text-right">{formatNumber(row.value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -418,8 +465,7 @@ export default function MacroPage() {
   const [selectedPair, setSelectedPair] = useState<ForexPair>("EURUSD");
   const [economy, setEconomy] = useState<EconomyState | null>(null);
   const [economyError, setEconomyError] = useState<string | null>(null);
-  const [euroAreaInflation, setEuroAreaInflation] =
-    useState<EuroAreaInflationState | null>(null);
+  const [euroAreaInflation, setEuroAreaInflation] = useState<EuroAreaInflationState | null>(null);
   const [euroInflationError, setEuroInflationError] = useState<string | null>(null);
   const [euroAreaGrowth, setEuroAreaGrowth] = useState<EuroAreaGrowthState | null>(null);
   const [euroGrowthError, setEuroGrowthError] = useState<string | null>(null);
@@ -474,7 +520,7 @@ export default function MacroPage() {
       } catch (error) {
         if (active) {
           setEuroGrowthError(
-            error instanceof Error ? error.message : "Euro Area growth data is unavailable."
+            error instanceof Error ? error.message : "Euro Area growth data is unavailable.",
           );
         }
       }
@@ -503,7 +549,7 @@ export default function MacroPage() {
       } catch (error) {
         if (active) {
           setEuroInflationError(
-            error instanceof Error ? error.message : "Euro Area inflation data is unavailable."
+            error instanceof Error ? error.message : "Euro Area inflation data is unavailable.",
           );
         }
       }
@@ -532,7 +578,7 @@ export default function MacroPage() {
       } catch (error) {
         if (active) {
           setEuroLabourError(
-            error instanceof Error ? error.message : "Euro Area labour data is unavailable."
+            error instanceof Error ? error.message : "Euro Area labour data is unavailable.",
           );
         }
       }
@@ -580,21 +626,33 @@ export default function MacroPage() {
             <span className="font-medium">Selected Pair:</span> {selectedPair}
           </p>
           <p className="text-muted-foreground">
-            <span className="font-medium text-foreground">Comparing:</span>{" "}
-            {baseCurrency} vs {quoteCurrency}
+            <span className="font-medium text-foreground">Comparing:</span> {baseCurrency} vs{" "}
+            {quoteCurrency}
           </p>
         </div>
       </section>
 
-      <nav className="mb-6 flex flex-wrap gap-3" aria-label="Macro regions"><a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#euro">🇪🇺 EURO AREA</a><a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#usa">🇺🇸 USA</a></nav>
-      <div id="euro" className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5"><h2 className="text-2xl font-bold">🇪🇺 EURO AREA — EUR MACRO</h2><p className="mt-1 text-sm text-muted-foreground">Eurozone growth, employment and inflation from Eurostat.</p></div>
+      <nav className="mb-6 flex flex-wrap gap-3" aria-label="Macro regions">
+        <a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#euro">
+          🇪🇺 EURO AREA
+        </a>
+        <a className="rounded-lg border px-5 py-3 font-semibold hover:bg-muted" href="#usa">
+          🇺🇸 USA
+        </a>
+      </nav>
+      <div id="euro" className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
+        <h2 className="text-2xl font-bold">🇪🇺 EURO AREA — EUR MACRO</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Eurozone growth, employment and inflation from Eurostat.
+        </p>
+      </div>
 
       <section className="mb-8">
         <div className="mb-4">
           <h2 className="text-lg font-semibold">EURO AREA GROWTH</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Real activity from Eurostat; European Commission business survey forward indicators
-            from DG ECFIN via Eurostat.
+            Real activity from Eurostat; European Commission business survey forward indicators from
+            DG ECFIN via Eurostat.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -613,9 +671,7 @@ export default function MacroPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Growth Momentum
                   </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    {euroAreaGrowth.assessment.momentum}
-                  </p>
+                  <p className="mt-1 text-lg font-semibold">{euroAreaGrowth.assessment.momentum}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -658,27 +714,38 @@ export default function MacroPage() {
                       label="QoQ annualized"
                       value={formatPercent(euroAreaGrowth.gdp.latest.qoqAnnualized.value)}
                     />
-                    <ValueCell label="YoY" value={formatPercent(euroAreaGrowth.gdp.latest.yoy.value)} />
+                    <ValueCell
+                      label="YoY"
+                      value={formatPercent(euroAreaGrowth.gdp.latest.yoy.value)}
+                    />
                     <ValueCell
                       label="Previous quarter level"
                       value={formatNumber(euroAreaGrowth.gdp.previousQuarter.value)}
                       detail={euroAreaGrowth.gdp.previousQuarter.date ?? "—"}
                     />
                   </div>
-                  {euroAreaGrowth.gdp.rawObservations && euroAreaGrowth.gdp.rawObservations.length > 0 && (
-                    <HistoricalTable
-                      title="Latest 6 quarters"
-                      columns={[
-                        { key: "date", label: "Quarter", align: "left" },
-                        { key: "value", label: "Level (millions €)", align: "right", format: (v) => formatNumber(v, 0) },
-                      ]}
-                      rows={getLatestObservations(euroAreaGrowth.gdp.rawObservations, 6).map((obs) => ({
-                        date: obs.date,
-                        value: obs.value,
-                      }))}
-                      compact={true}
-                    />
-                  )}
+                  {euroAreaGrowth.gdp.rawObservations &&
+                    euroAreaGrowth.gdp.rawObservations.length > 0 && (
+                      <HistoricalTable
+                        title="Latest 6 quarters"
+                        columns={[
+                          { key: "date", label: "Quarter", align: "left" },
+                          {
+                            key: "value",
+                            label: "Level (millions €)",
+                            align: "right",
+                            format: (v) => formatNumber(v, 0),
+                          },
+                        ]}
+                        rows={getLatestObservations(euroAreaGrowth.gdp.rawObservations, 6).map(
+                          (obs) => ({
+                            date: obs.date,
+                            value: obs.value,
+                          }),
+                        )}
+                        compact={true}
+                      />
+                    )}
                 </div>
                 <div className="rounded-lg border p-4">
                   <h3 className="font-semibold">Household / Private Consumption (Real)</h3>
@@ -694,7 +761,7 @@ export default function MacroPage() {
                     <ValueCell
                       label="QoQ annualized"
                       value={formatPercent(
-                        euroAreaGrowth.householdConsumption.latest.qoqAnnualized.value
+                        euroAreaGrowth.householdConsumption.latest.qoqAnnualized.value,
                       )}
                     />
                     <ValueCell
@@ -702,25 +769,36 @@ export default function MacroPage() {
                       value={formatPercent(euroAreaGrowth.householdConsumption.latest.yoy.value)}
                     />
                   </div>
-                  {euroAreaGrowth.householdConsumption.rawObservations && euroAreaGrowth.householdConsumption.rawObservations.length > 0 && (
-                    <HistoricalTable
-                      title="Latest 6 quarters"
-                      columns={[
-                        { key: "date", label: "Quarter", align: "left" },
-                        { key: "value", label: "Level (millions €)", align: "right", format: (v) => formatNumber(v, 0) },
-                      ]}
-                      rows={getLatestObservations(euroAreaGrowth.householdConsumption.rawObservations, 6).map((obs) => ({
-                        date: obs.date,
-                        value: obs.value,
-                      }))}
-                      compact={true}
-                    />
-                  )}
+                  {euroAreaGrowth.householdConsumption.rawObservations &&
+                    euroAreaGrowth.householdConsumption.rawObservations.length > 0 && (
+                      <HistoricalTable
+                        title="Latest 6 quarters"
+                        columns={[
+                          { key: "date", label: "Quarter", align: "left" },
+                          {
+                            key: "value",
+                            label: "Level (millions €)",
+                            align: "right",
+                            format: (v) => formatNumber(v, 0),
+                          },
+                        ]}
+                        rows={getLatestObservations(
+                          euroAreaGrowth.householdConsumption.rawObservations,
+                          6,
+                        ).map((obs) => ({
+                          date: obs.date,
+                          value: obs.value,
+                        }))}
+                        compact={true}
+                      />
+                    )}
                 </div>
-                {([
-                  ["Industrial Production", euroAreaGrowth.industrialProduction],
-                  ["Retail Sales", euroAreaGrowth.retailSales],
-                ] as const).map(([title, activity]) => (
+                {(
+                  [
+                    ["Industrial Production", euroAreaGrowth.industrialProduction],
+                    ["Retail Sales", euroAreaGrowth.retailSales],
+                  ] as const
+                ).map(([title, activity]) => (
                   <div className="rounded-lg border p-4" key={title}>
                     <h3 className="font-semibold">{title}</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -749,7 +827,12 @@ export default function MacroPage() {
                         title="Latest 6 months"
                         columns={[
                           { key: "date", label: "Month", align: "left" },
-                          { key: "value", label: "Index", align: "right", format: (v) => formatNumber(v, 1) },
+                          {
+                            key: "value",
+                            label: "Index",
+                            align: "right",
+                            format: (v) => formatNumber(v, 1),
+                          },
                         ]}
                         rows={getLatestObservations(activity.rawObservations, 6).map((obs) => ({
                           date: obs.date,
@@ -760,41 +843,62 @@ export default function MacroPage() {
                     )}
                   </div>
                 ))}
-                {([
-                  ["Manufacturing Order Books", euroAreaGrowth.forwardSurvey.manufacturingOrderBooks],
-                  ["Manufacturing Production Expectations", euroAreaGrowth.forwardSurvey.manufacturingProductionExpectations],
-                  ["Services Demand Expectations", euroAreaGrowth.forwardSurvey.servicesDemandExpectations],
-                ] as const).map(([title, indicator]) =>
+                {(
+                  [
+                    [
+                      "Manufacturing Order Books",
+                      euroAreaGrowth.forwardSurvey.manufacturingOrderBooks,
+                    ],
+                    [
+                      "Manufacturing Production Expectations",
+                      euroAreaGrowth.forwardSurvey.manufacturingProductionExpectations,
+                    ],
+                    [
+                      "Services Demand Expectations",
+                      euroAreaGrowth.forwardSurvey.servicesDemandExpectations,
+                    ],
+                  ] as const
+                ).map(([title, indicator]) =>
                   indicator.status === "available" ? (
                     <div className="rounded-lg border p-4" key={title}>
                       <h3 className="font-semibold">{title}</h3>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                         <ValueCell label="Latest" value={formatNumber(indicator.latest.value)} />
-                        <ValueCell label="Recent Change" value={formatNumber(indicator.recentChange.value)} />
-                        <ValueCell label="3M Change" value={formatNumber(indicator.shortTermChange.value)} />
+                        <ValueCell
+                          label="Recent Change"
+                          value={formatNumber(indicator.recentChange.value)}
+                        />
+                        <ValueCell
+                          label="3M Change"
+                          value={formatNumber(indicator.shortTermChange.value)}
+                        />
                         <ValueCell label="Freshness" value={indicator.freshness} />
                       </div>
                     </div>
-                  ) : null
+                  ) : null,
                 )}
               </div>
               <details className="mt-5 border-t pt-3 text-xs text-muted-foreground">
                 <summary className="cursor-pointer font-medium">Sources and freshness</summary>
                 <p className="mt-2">{euroAreaGrowth.sources.freshnessMethod}</p>
                 <p className="mt-2">{euroAreaGrowth.sources.surveyMethod}</p>
-                {([
-                  ["Real GDP", euroAreaGrowth.gdp],
-                  ["Household consumption", euroAreaGrowth.householdConsumption],
-                  ["Industrial production", euroAreaGrowth.industrialProduction],
-                  ["Retail sales", euroAreaGrowth.retailSales],
-                ] as const).map(([label, item]) => (
+                {(
+                  [
+                    ["Real GDP", euroAreaGrowth.gdp],
+                    ["Household consumption", euroAreaGrowth.householdConsumption],
+                    ["Industrial production", euroAreaGrowth.industrialProduction],
+                    ["Retail sales", euroAreaGrowth.retailSales],
+                  ] as const
+                ).map(([label, item]) => (
                   <p className="mt-2" key={label}>
-                    {label}: {item.series?.dataset ?? "unavailable"} · {item.series?.unit ?? "—"} ·
-                    {" "}Eurostat {item.series?.geo ?? "—"} · observed{" "}
+                    {label}: {item.series?.dataset ?? "unavailable"} · {item.series?.unit ?? "—"} ·{" "}
+                    Eurostat {item.series?.geo ?? "—"} · observed{" "}
                     {item.series?.latestObservationDate ?? "—"} · freshness {item.freshness}
                     {item.series ? (
                       <>
-                        {" "}· filters {Object.entries(item.series.filters)
+                        {" "}
+                        · filters{" "}
+                        {Object.entries(item.series.filters)
                           .filter(([key]) => key !== "sinceTimePeriod")
                           .map(([key, value]) => `${key}=${value}`)
                           .join(", ")}
@@ -855,26 +959,38 @@ export default function MacroPage() {
                 </p>
               ))}
               <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                {([
-                  ["Unemployment", euroAreaLabour.unemployment, "M"],
-                  ["Employment", euroAreaLabour.employment, "A"],
-                  ["Job Vacancies", euroAreaLabour.jobVacancies, "Q"],
-                  ["Wage Growth", euroAreaLabour.wageGrowth, "Q"],
-                ] as const).map(([title, indicator, frequency]) =>
+                {(
+                  [
+                    ["Unemployment", euroAreaLabour.unemployment, "M"],
+                    ["Employment", euroAreaLabour.employment, "A"],
+                    ["Job Vacancies", euroAreaLabour.jobVacancies, "Q"],
+                    ["Wage Growth", euroAreaLabour.wageGrowth, "Q"],
+                  ] as const
+                ).map(([title, indicator, frequency]) =>
                   indicator.indicator?.status === "available" ? (
                     <div className="rounded-lg border p-4" key={title}>
                       <h3 className="font-semibold">{title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Freshness: {indicator.freshness} · {indicator.indicator.frequency === "M"
+                        Freshness: {indicator.freshness} ·{" "}
+                        {indicator.indicator.frequency === "M"
                           ? "Monthly"
                           : indicator.indicator.frequency === "Q"
                             ? "Quarterly"
                             : "Annual"}
                       </p>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                        <ValueCell label="Latest" value={formatNumber(indicator.indicator.latest.value)} />
-                        <ValueCell label="Previous" value={formatNumber(indicator.indicator.previous.value)} />
-                        <ValueCell label="3M Change" value={formatNumber(indicator.indicator.threeMonthChange.value)} />
+                        <ValueCell
+                          label="Latest"
+                          value={formatNumber(indicator.indicator.latest.value)}
+                        />
+                        <ValueCell
+                          label="Previous"
+                          value={formatNumber(indicator.indicator.previous.value)}
+                        />
+                        <ValueCell
+                          label="3M Change"
+                          value={formatNumber(indicator.indicator.threeMonthChange.value)}
+                        />
                         <ValueCell label="Direction" value={indicator.indicator.direction3m} />
                       </div>
 
@@ -886,7 +1002,12 @@ export default function MacroPage() {
                             columns={[
                               {
                                 key: "date",
-                                label: frequency === "A" ? "Year" : frequency === "Q" ? "Quarter" : "Month",
+                                label:
+                                  frequency === "A"
+                                    ? "Year"
+                                    : frequency === "Q"
+                                      ? "Quarter"
+                                      : "Month",
                                 align: "left",
                               },
                               {
@@ -894,10 +1015,21 @@ export default function MacroPage() {
                                 label: `Value (${indicator.indicator.unit})`,
                                 align: "right",
                                 format: (v) =>
-                                  formatMetricValue(v, indicator.indicator?.unit === "PC" || indicator.indicator?.unit === "PC_ACT" ? 2 : 1),
+                                  formatMetricValue(
+                                    v,
+                                    indicator.indicator?.unit === "PC" ||
+                                      indicator.indicator?.unit === "PC_ACT"
+                                      ? 2
+                                      : 1,
+                                  ),
                               },
                             ]}
-                            rows={getLatestObservations(indicator.indicator.rawObservations, getFrequencyDisplayLimit(indicator.indicator.frequency as "M" | "Q" | "A")).map((obs) => ({
+                            rows={getLatestObservations(
+                              indicator.indicator.rawObservations,
+                              getFrequencyDisplayLimit(
+                                indicator.indicator.frequency as "M" | "Q" | "A",
+                              ),
+                            ).map((obs) => ({
                               date: obs.date,
                               value: obs.value,
                             }))}
@@ -906,24 +1038,29 @@ export default function MacroPage() {
                         )}
                     </div>
                   ) : indicator.error ? (
-                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4" key={title}>
+                    <div
+                      className="rounded-lg border border-yellow-200 bg-yellow-50 p-4"
+                      key={title}
+                    >
                       <h3 className="font-semibold">{title}</h3>
                       <p className="mt-2 text-xs text-yellow-800">{indicator.error}</p>
                     </div>
-                  ) : null
+                  ) : null,
                 )}
               </div>
               <details className="mt-5 border-t pt-3 text-xs text-muted-foreground">
                 <summary className="cursor-pointer font-medium">Sources and freshness</summary>
-                {([
-                  ["Unemployment Rate", euroAreaLabour.unemployment],
-                  ["Employment Rate", euroAreaLabour.employment],
-                  ["Job Vacancy Rate", euroAreaLabour.jobVacancies],
-                  ["Wage Growth", euroAreaLabour.wageGrowth],
-                ] as const).map(([label, item]) => (
+                {(
+                  [
+                    ["Unemployment Rate", euroAreaLabour.unemployment],
+                    ["Employment Rate", euroAreaLabour.employment],
+                    ["Job Vacancy Rate", euroAreaLabour.jobVacancies],
+                    ["Wage Growth", euroAreaLabour.wageGrowth],
+                  ] as const
+                ).map(([label, item]) => (
                   <p className="mt-2" key={label}>
-                    {label}: {item.indicator?.dataset ?? "unavailable"} · {item.indicator?.unit ?? "—"} · Eurostat
-                    {" "}{item.indicator?.geo ?? "—"} · observed{" "}
+                    {label}: {item.indicator?.dataset ?? "unavailable"} ·{" "}
+                    {item.indicator?.unit ?? "—"} · Eurostat {item.indicator?.geo ?? "—"} · observed{" "}
                     {item.indicator?.latest.date ?? "—"} · freshness {item.freshness}
                     {item.error && ` · Error: ${item.error}`}
                   </p>
@@ -942,8 +1079,8 @@ export default function MacroPage() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold">EURO AREA INFLATION</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Eurostat HICP data, assessed against the ECB’s 2% medium-term symmetric target.
-            This EUR inflation engine is independent of USD macro calculations.
+            Eurostat HICP data, assessed against the ECB’s 2% medium-term symmetric target. This EUR
+            inflation engine is independent of USD macro calculations.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -954,9 +1091,7 @@ export default function MacroPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Current Inflation State
                   </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    {euroAreaInflation.current.overall}
-                  </p>
+                  <p className="mt-1 text-lg font-semibold">{euroAreaInflation.current.overall}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Headline: {euroAreaInflation.current.headline} · Core:{" "}
                     {euroAreaInflation.current.core}
@@ -977,15 +1112,9 @@ export default function MacroPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Inflation Momentum
                   </p>
-                  <p className="mt-1 text-sm">
-                    Overall: {euroAreaInflation.momentum.overall}
-                  </p>
-                  <p className="text-sm">
-                    Short term: {euroAreaInflation.momentum.shortTerm}
-                  </p>
-                  <p className="text-sm">
-                    Medium term: {euroAreaInflation.momentum.mediumTerm}
-                  </p>
+                  <p className="mt-1 text-sm">Overall: {euroAreaInflation.momentum.overall}</p>
+                  <p className="text-sm">Short term: {euroAreaInflation.momentum.shortTerm}</p>
+                  <p className="text-sm">Medium term: {euroAreaInflation.momentum.mediumTerm}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1030,15 +1159,17 @@ export default function MacroPage() {
                 </p>
               ))}
               <div className="mt-5 grid gap-5 border-t pt-4 xl:grid-cols-2">
-                {([
-                  ["Headline HICP", euroAreaInflation.headline],
-                  ["Core HICP", euroAreaInflation.core],
-                ] as const).map(([label, series]) => (
+                {(
+                  [
+                    ["Headline HICP", euroAreaInflation.headline],
+                    ["Core HICP", euroAreaInflation.core],
+                  ] as const
+                ).map(([label, series]) => (
                   <div className="min-w-0" key={series.seriesId}>
                     <h3 className="text-sm font-semibold">{label}</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Eurostat {series.dataset} · {series.seriesId} · {series.geo} ·{" "}
-                      {series.unit} · observed {series.latestObservationDate ?? "unavailable"} ·{" "}
+                      Eurostat {series.dataset} · {series.seriesId} · {series.geo} · {series.unit} ·
+                      observed {series.latestObservationDate ?? "unavailable"} ·{" "}
                       {series.internalObservationCount} monthly observations
                     </p>
                     {series.freshness === "stale" ? (
@@ -1088,9 +1219,7 @@ export default function MacroPage() {
                 ))}
               </div>
               <details className="mt-4 border-t pt-3 text-xs text-muted-foreground">
-                <summary className="cursor-pointer font-medium">
-                  Momentum methodology
-                </summary>
+                <summary className="cursor-pointer font-medium">Momentum methodology</summary>
                 <p className="mt-2">{euroAreaInflation.momentum.method}</p>
                 <p className="mt-2">{euroAreaInflation.source.freshnessMethod}</p>
               </details>
@@ -1103,15 +1232,19 @@ export default function MacroPage() {
         </article>
       </section>
 
-
-      <div id="usa" className="mb-8 rounded-xl border border-sky-500/40 bg-sky-500/5 p-5"><h2 className="text-2xl font-bold">🇺🇸 USA — USD MACRO</h2><p className="mt-1 text-sm text-muted-foreground">US economic indicators, Federal Reserve expectations and Treasury yields.</p></div>
+      <div id="usa" className="mb-8 rounded-xl border border-sky-500/40 bg-sky-500/5 p-5">
+        <h2 className="text-2xl font-bold">🇺🇸 USA — USD MACRO</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          US economic indicators, Federal Reserve expectations and Treasury yields.
+        </p>
+      </div>
 
       <section className="mb-8">
         <div className="mb-4">
           <h2 className="text-lg font-semibold">USD MACRO STATE</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            An evidence-based standalone USD macro assessment, not a DXY or
-            currency-pair trading signal.
+            An evidence-based standalone USD macro assessment, not a DXY or currency-pair trading
+            signal.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -1152,7 +1285,7 @@ export default function MacroPage() {
                   <p className="text-xs italic text-muted-foreground">
                     {ratesRegimeExplanation(
                       economy.usRatesRegime.horizons.oneWeek.regime,
-                      economy.usRatesRegime.horizons.oneWeek.explanation
+                      economy.usRatesRegime.horizons.oneWeek.explanation,
                     )}
                   </p>
                 </div>
@@ -1188,24 +1321,21 @@ export default function MacroPage() {
                   </p>
                   <p>
                     Inflation: {economy.usdMacroState.macroImpulse.inflation.direction} · core{" "}
-                    {economy.usdMacroState.macroImpulse.inflation.coreShortTerm.toLowerCase()} /
-                    {" "}{economy.usdMacroState.macroImpulse.inflation.coreMediumTerm.toLowerCase()}
+                    {economy.usdMacroState.macroImpulse.inflation.coreShortTerm.toLowerCase()} /{" "}
+                    {economy.usdMacroState.macroImpulse.inflation.coreMediumTerm.toLowerCase()}
                   </p>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Wage pressure: {economy.usdMacroState.macroImpulse.labour.wagePressure} · Forward
-                  price pressure: {economy.usdMacroState.macroImpulse.inflation.forwardPricePressure}
+                  price pressure:{" "}
+                  {economy.usdMacroState.macroImpulse.inflation.forwardPricePressure}
                 </p>
               </div>
               <div className="mt-5 grid gap-5 border-t pt-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm font-semibold">Drivers</p>
-                  <p className="mt-2 text-sm">
-                    Primary: {economy.usdMacroState.primaryDriver}
-                  </p>
-                  <p className="text-sm">
-                    Secondary: {economy.usdMacroState.secondaryDriver}
-                  </p>
+                  <p className="mt-2 text-sm">Primary: {economy.usdMacroState.primaryDriver}</p>
+                  <p className="text-sm">Secondary: {economy.usdMacroState.secondaryDriver}</p>
                   <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Supporting evidence
                   </p>
@@ -1240,7 +1370,8 @@ export default function MacroPage() {
                   </p>
                   <p className="mt-2 text-sm">{economy.usdMacroState.explanation}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Confidence reflects evidence alignment, not the probability USD will rise or fall.
+                    Confidence reflects evidence alignment, not the probability USD will rise or
+                    fall.
                   </p>
                   <details className="mt-2 text-xs text-muted-foreground">
                     <summary className="cursor-pointer">How confidence is derived</summary>
@@ -1250,19 +1381,19 @@ export default function MacroPage() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">USD macro state unavailable.</p>
+            <p className="text-sm text-muted-foreground">
+              {economyError ? "USD macro data unavailable." : "Loading USA macro data…"}
+            </p>
           )}
         </article>
       </section>
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">
-            FED MARKET EXPECTATIONS — POLYMARKET
-          </h2>
+          <h2 className="text-lg font-semibold">FED MARKET EXPECTATIONS — POLYMARKET</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Prediction-market prices from Polymarket. These are not CME FedWatch
-            or Fed Funds futures probabilities.
+            Prediction-market prices from Polymarket. These are not CME FedWatch or Fed Funds
+            futures probabilities.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -1317,7 +1448,8 @@ export default function MacroPage() {
                     {index === 0 ? "Next FOMC" : "FOMC"}: {formatDate(meeting.meetingDate)}
                   </h3>
                   <p className="mb-3 text-xs text-muted-foreground">
-                    {meeting.meetingLabel} · {meeting.status === "available" ? "Market data available" : meeting.reason}
+                    {meeting.meetingLabel} ·{" "}
+                    {meeting.status === "available" ? "Market data available" : meeting.reason}
                   </p>
                   <table className="w-full min-w-[560px] border-collapse text-sm">
                     <thead>
@@ -1336,13 +1468,10 @@ export default function MacroPage() {
                           <td className="py-2 pr-3 font-medium">{category.label}</td>
                           {horizons.map((horizon) => {
                             const snapshot = meeting.snapshots[horizon.key];
-                            const probability =
-                              snapshot?.normalizedProbabilities[category.key];
+                            const probability = snapshot?.normalizedProbabilities[category.key];
                             return (
                               <td className="py-2 pr-3" key={horizon.key}>
-                                {probability === undefined
-                                  ? "—"
-                                  : `${formatNumber(probability)}%`}
+                                {probability === undefined ? "—" : `${formatNumber(probability)}%`}
                               </td>
                             );
                           })}
@@ -1365,11 +1494,13 @@ export default function MacroPage() {
                     </tbody>
                   </table>
                   <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                    {([
-                      { key: "oneDay", label: "1D Repricing" },
-                      { key: "oneWeek", label: "1W Repricing" },
-                      { key: "oneMonth", label: "1M Repricing" },
-                    ] as const).map(({ key, label }) => {
+                    {(
+                      [
+                        { key: "oneDay", label: "1D Repricing" },
+                        { key: "oneWeek", label: "1W Repricing" },
+                        { key: "oneMonth", label: "1M Repricing" },
+                      ] as const
+                    ).map(({ key, label }) => {
                       const repricing = meeting.repricing[key];
                       const categoryChanges = repricing.categoryProbabilityChanges
                         .map((change) => {
@@ -1380,8 +1511,8 @@ export default function MacroPage() {
                       return (
                         <div key={key}>
                           <p>
-                            <span className="font-medium">{label}:</span>{" "}
-                            {repricing.state} {repricing.arrow}
+                            <span className="font-medium">{label}:</span> {repricing.state}{" "}
+                            {repricing.arrow}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Expected policy-rate change:{" "}
@@ -1398,9 +1529,7 @@ export default function MacroPage() {
                   </div>
                   {meeting.rawCurrentOutcomes.length > 0 ? (
                     <details className="mt-3 text-xs text-muted-foreground">
-                      <summary className="cursor-pointer">
-                        Raw Polymarket outcomes (audit)
-                      </summary>
+                      <summary className="cursor-pointer">Raw Polymarket outcomes (audit)</summary>
                       <p className="mt-1">
                         Raw YES-price sum:{" "}
                         {meeting.rawCurrentProbabilitySum === null
@@ -1434,8 +1563,8 @@ export default function MacroPage() {
           <div className="mt-4 rounded-lg border p-3 text-sm">
             <p className="font-medium">CME FedWatch Benchmark / Reference</p>
             <p className="mt-1 text-muted-foreground">
-              CME FedWatch: Data source not connected. Polymarket values above are
-              kept separate and must not be interpreted as CME futures-implied probabilities.
+              CME FedWatch: Data source not connected. Polymarket values above are kept separate and
+              must not be interpreted as CME futures-implied probabilities.
             </p>
           </div>
           {economy?.polymarketFedExpectations.reason ? (
@@ -1450,7 +1579,8 @@ export default function MacroPage() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold">US RATES REGIME</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Treasury yield movements and curve structure over matched horizons. This is not a USD bias or trading signal.
+            Treasury yield movements and curve structure over matched horizons. This is not a USD
+            bias or trading signal.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -1467,11 +1597,13 @@ export default function MacroPage() {
                 </tr>
               </thead>
               <tbody>
-                {([
-                  ["oneDay", "1D"],
-                  ["oneWeek", "1W"],
-                  ["oneMonth", "1M"],
-                ] as const).map(([key, label]) => {
+                {(
+                  [
+                    ["oneDay", "1D"],
+                    ["oneWeek", "1W"],
+                    ["oneMonth", "1M"],
+                  ] as const
+                ).map(([key, label]) => {
                   const horizon = economy?.usRatesRegime.horizons[key];
                   return (
                     <tr className="border-b last:border-0" key={key}>
@@ -1489,12 +1621,12 @@ export default function MacroPage() {
                         <span className="font-medium">
                           {horizon?.curveDirection === "MIXED"
                             ? "MIXED / UNCLEAR"
-                            : horizon?.curveDirection ?? "UNAVAILABLE"}
+                            : (horizon?.curveDirection ?? "UNAVAILABLE")}
                         </span>
                         <span className="block text-xs italic text-muted-foreground">
                           {curveDirectionExplanation(
                             horizon?.curveDirection ?? "UNAVAILABLE",
-                            horizon?.explanation ?? ""
+                            horizon?.explanation ?? "",
                           )}
                         </span>
                         <span className="block text-xs text-muted-foreground">Spread changes</span>
@@ -1508,7 +1640,7 @@ export default function MacroPage() {
                         <span className="block text-xs italic text-muted-foreground">
                           {ratesRegimeExplanation(
                             horizon?.regime ?? "UNAVAILABLE",
-                            horizon?.explanation ?? ""
+                            horizon?.explanation ?? "",
                           )}
                         </span>
                       </td>
@@ -1525,7 +1657,7 @@ export default function MacroPage() {
               <span className="block text-xs italic text-muted-foreground">
                 {ratesRegimeExplanation(
                   economy?.usRatesRegime.horizons.oneWeek.regime ?? "UNAVAILABLE",
-                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? ""
+                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
                 )}
               </span>
             </p>
@@ -1533,18 +1665,19 @@ export default function MacroPage() {
               <span className="font-medium">Yield Curve: </span>
               {economy?.usRatesRegime.horizons.oneWeek.curveDirection === "MIXED"
                 ? "MIXED / UNCLEAR"
-                : economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE"}
+                : (economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE")}
               <span className="block text-xs italic text-muted-foreground">
                 {curveDirectionExplanation(
                   economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE",
-                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? ""
+                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
                 )}
               </span>
             </p>
             <p>
               <span className="font-medium">FRONT-END</span>
               <span className="block text-xs italic text-muted-foreground">
-                Shorter-term yields, especially the 2Y, which are highly sensitive to Fed expectations.
+                Shorter-term yields, especially the 2Y, which are highly sensitive to Fed
+                expectations.
               </span>
             </p>
             <p>
@@ -1562,8 +1695,7 @@ export default function MacroPage() {
             </p>
             <p className="text-muted-foreground">
               <span className="font-medium text-foreground">Explanation: </span>
-              {economy?.usRatesRegime.explanation ??
-                "US rates regime data is unavailable."}
+              {economy?.usRatesRegime.explanation ?? "US rates regime data is unavailable."}
             </p>
           </div>
         </article>
@@ -1571,11 +1703,10 @@ export default function MacroPage() {
 
       <section className="mb-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">
-            FED REPRICING × 2Y CONFIRMATION
-          </h2>
+          <h2 className="text-lg font-semibold">FED REPRICING × 2Y CONFIRMATION</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Checks whether the US 2Y front end moved with Polymarket-based Fed expectations. This is descriptive confirmation, not a USD or trading signal.
+            Checks whether the US 2Y front end moved with Polymarket-based Fed expectations. This is
+            descriptive confirmation, not a USD or trading signal.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -1596,29 +1727,26 @@ export default function MacroPage() {
                 </tr>
               </thead>
               <tbody>
-                {([
-                  ["oneDay", "1D"],
-                  ["oneWeek", "1W"],
-                  ["oneMonth", "1M"],
-                ] as const).map(([key, label]) => {
-                  const horizon =
-                    economy?.fedRepricingYieldConfirmation.horizons[key];
+                {(
+                  [
+                    ["oneDay", "1D"],
+                    ["oneWeek", "1W"],
+                    ["oneMonth", "1M"],
+                  ] as const
+                ).map(([key, label]) => {
+                  const horizon = economy?.fedRepricingYieldConfirmation.horizons[key];
                   return (
                     <tr className="border-b last:border-0" key={key}>
                       <td className="py-2 pr-3 font-medium">{label}</td>
                       <td className="py-2 pr-3">
-                        {horizon
-                          ? `${horizon.fedState} ${horizon.fedArrow}`
-                          : "UNAVAILABLE"}
+                        {horizon ? `${horizon.fedState} ${horizon.fedArrow}` : "UNAVAILABLE"}
                       </td>
                       <td className="py-2 pr-3">
                         {horizon
                           ? `${formatBasisPoints(horizon.twoYearChangeBasisPoints)} ${horizon.twoYearArrow}`
                           : "—"}
                       </td>
-                      <td className="py-2 pr-3">
-                        {horizon?.state ?? "UNAVAILABLE"}
-                      </td>
+                      <td className="py-2 pr-3">{horizon?.state ?? "UNAVAILABLE"}</td>
                     </tr>
                   );
                 })}
@@ -1641,7 +1769,8 @@ export default function MacroPage() {
               "Matched-horizon Fed repricing and US 2Y data are unavailable."}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Uses the next FOMC meeting’s Polymarket repricing and same-horizon FRED 2Y changes only; no CME FedWatch, macro-engine inputs, or trade direction are implied.
+            Uses the next FOMC meeting’s Polymarket repricing and same-horizon FRED 2Y changes only;
+            no CME FedWatch, macro-engine inputs, or trade direction are implied.
           </p>
         </article>
       </section>
@@ -1650,7 +1779,8 @@ export default function MacroPage() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold">US RATES &amp; YIELD CURVE</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Official daily US Treasury constant-maturity yields from FRED. Changes and curve spreads are shown in basis points.
+            Official daily US Treasury constant-maturity yields from FRED. Changes and curve spreads
+            are shown in basis points.
           </p>
         </div>
         <article className="rounded-xl border p-5">
@@ -1714,7 +1844,8 @@ export default function MacroPage() {
             </table>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            NOW includes the latest FRED observation date. Prior snapshots use available dated observations; no holiday interpolation is applied.
+            NOW includes the latest FRED observation date. Prior snapshots use available dated
+            observations; no holiday interpolation is applied.
           </p>
 
           <h3 className="mb-3 mt-6 text-sm font-semibold">YIELD CURVE</h3>
@@ -1730,11 +1861,13 @@ export default function MacroPage() {
                 </tr>
               </thead>
               <tbody>
-                {([
-                  ["2Y-10Y", "2Y–10Y"],
-                  ["2Y-30Y", "2Y–30Y"],
-                  ["5Y-30Y", "5Y–30Y"],
-                ] as const).map(([key, label]) => {
+                {(
+                  [
+                    ["2Y-10Y", "2Y–10Y"],
+                    ["2Y-30Y", "2Y–30Y"],
+                    ["5Y-30Y", "5Y–30Y"],
+                  ] as const
+                ).map(([key, label]) => {
                   const curve = economy?.usRatesYieldCurve.yieldCurve[key];
                   return (
                     <tr className="border-b last:border-0" key={key}>
@@ -1801,7 +1934,8 @@ export default function MacroPage() {
             </p>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Historical direction calibration uses each maturity&apos;s prior FRED moves; curve steepening/flattening is descriptive and has no bullish or bearish interpretation.
+            Historical direction calibration uses each maturity&apos;s prior FRED moves; curve
+            steepening/flattening is descriptive and has no bullish or bearish interpretation.
           </p>
         </article>
       </section>
@@ -1909,6 +2043,14 @@ export default function MacroPage() {
                     ? "The economy is contracting."
                     : "Economic output is unchanged quarter over quarter."}
             </p>
+            <HistoryTable
+              title="Latest 6 quarters"
+              rows={(economy?.growth.gdp.recentHistory ?? [])
+                .slice(0, 6)
+                .reverse()
+                .map((row) => ({ date: row.date, value: row.qoqAnnualized }))}
+              unit="QoQ annualized (%)"
+            />
           </DataCard>
 
           <DataCard title="Consumer Spending (Real PCE)">
@@ -1936,6 +2078,14 @@ export default function MacroPage() {
                 />
               </div>
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={(economy?.growth.realPce.recentHistory ?? [])
+                .slice(0, 6)
+                .reverse()
+                .map((row) => ({ date: row.date, value: row.mom }))}
+              unit="MoM (%)"
+            />
           </DataCard>
 
           <DataCard title="Industrial Production">
@@ -1965,6 +2115,14 @@ export default function MacroPage() {
                 }}
               />
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={(economy?.growth.industrialProduction.recentHistory ?? [])
+                .slice(0, 6)
+                .reverse()
+                .map((row) => ({ date: row.date, value: row.mom }))}
+              unit="MoM (%)"
+            />
           </DataCard>
 
           <DataCard title="Retail Sales">
@@ -1994,6 +2152,14 @@ export default function MacroPage() {
                 }}
               />
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={(economy?.growth.retailSales.recentHistory ?? [])
+                .slice(0, 6)
+                .reverse()
+                .map((row) => ({ date: row.date, value: row.mom }))}
+              unit="MoM (%)"
+            />
           </DataCard>
 
           <DataCard title="Manufacturing PMI">
@@ -2112,11 +2278,13 @@ export default function MacroPage() {
               <div className="mt-5 grid gap-3 border-t pt-4 text-sm sm:grid-cols-2">
                 <p>
                   <span className="font-medium">Strongest inflationary driver: </span>
-                  {economy.inflationAssessment.strongestInflationaryDriver ?? "No clear contributor"}
+                  {economy.inflationAssessment.strongestInflationaryDriver ??
+                    "No clear contributor"}
                 </p>
                 <p>
                   <span className="font-medium">Strongest disinflationary driver: </span>
-                  {economy.inflationAssessment.strongestDisinflationaryDriver ?? "No clear contributor"}
+                  {economy.inflationAssessment.strongestDisinflationaryDriver ??
+                    "No clear contributor"}
                 </p>
                 <p className="sm:col-span-2">
                   <span className="font-medium">Core / headline divergence: </span>
@@ -2128,13 +2296,18 @@ export default function MacroPage() {
               </div>
             </article>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {([
-                ["Headline CPI", economy.inflation.headline.cpi],
-                ["Headline PCE", economy.inflation.headline.pce],
-                ["Core CPI", economy.inflation.core.coreCpi],
-                ["Core PCE", economy.inflation.core.corePce],
-              ] as const).map(([label, detail]) => (
+              {(
+                [
+                  ["Headline CPI", economy.inflation.headline.cpi],
+                  ["Headline PCE", economy.inflation.headline.pce],
+                  ["Core CPI", economy.inflation.core.coreCpi],
+                  ["Core PCE", economy.inflation.core.corePce],
+                ] as const
+              ).map(([label, detail]) => (
                 <DataCard key={label} title={label}>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    FRED {detail.series} · seasonally adjusted index · calculated YoY and MoM
+                  </p>
                   <div className="mb-4">
                     <p className="text-xs text-muted-foreground">Current YoY</p>
                     <p className="mt-1 text-2xl font-semibold">
@@ -2155,27 +2328,35 @@ export default function MacroPage() {
                       <div className="grid grid-cols-[2.5rem_repeat(6,minmax(0,1fr))] gap-2 border-b py-2 text-center text-xs">
                         <span className="text-left text-muted-foreground">YoY</span>
                         {detail.monthlyHistory.map((month) => (
-                          <span key={month.date}>
-                            {formatPercent(month.yoy)}
-                          </span>
+                          <span key={month.date}>{formatPercent(month.yoy)}</span>
                         ))}
                       </div>
                       <div className="grid grid-cols-[2.5rem_repeat(6,minmax(0,1fr))] gap-2 py-2 text-center text-xs">
                         <span className="text-left text-muted-foreground">MoM</span>
                         {detail.monthlyHistory.map((month) => (
-                          <span key={month.date}>
-                            {formatPercent(month.mom)}
-                          </span>
+                          <span key={month.date}>{formatPercent(month.mom)}</span>
                         ))}
                       </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <ValueCell label="1 month ago YoY" value={formatPercent(detail.yoy.oneMonthAgo.value)} />
-                    <ValueCell label="3 months ago YoY" value={formatPercent(detail.yoy.threeMonthsAgo.value)} />
-                    <ValueCell label="6 months ago YoY" value={formatPercent(detail.yoy.sixMonthsAgo.value)} />
+                    <ValueCell
+                      label="1 month ago YoY"
+                      value={formatPercent(detail.yoy.oneMonthAgo.value)}
+                    />
+                    <ValueCell
+                      label="3 months ago YoY"
+                      value={formatPercent(detail.yoy.threeMonthsAgo.value)}
+                    />
+                    <ValueCell
+                      label="6 months ago YoY"
+                      value={formatPercent(detail.yoy.sixMonthsAgo.value)}
+                    />
                     <ValueCell label="Latest MoM" value={formatPercent(detail.mom.latest.value)} />
-                    <ValueCell label="3-month annualized" value={formatPercent(detail.annualized3m.value)} />
+                    <ValueCell
+                      label="3-month annualized"
+                      value={formatPercent(detail.annualized3m.value)}
+                    />
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">
                     Recent YoY trend: {detail.trend}
@@ -2280,6 +2461,11 @@ export default function MacroPage() {
                 }}
               />
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={economy?.labour.unemploymentRate.recentHistory ?? []}
+              unit="Rate (%)"
+            />
           </DataCard>
 
           <DataCard title="Jobs Added (NFP)">
@@ -2338,6 +2524,11 @@ export default function MacroPage() {
                     : "Hiring is holding up."}
               </p>
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={economy?.labour.nonfarmPayrollEmployment.recentHistory ?? []}
+              unit="Jobs added (thousands)"
+            />
           </DataCard>
 
           <DataCard title="Wage Growth">
@@ -2370,6 +2561,11 @@ export default function MacroPage() {
                 />
               </div>
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={economy?.labour.averageHourlyEarnings.recentHistory ?? []}
+              unit="YoY (%)"
+            />
           </DataCard>
 
           <DataCard title="Weekly Jobless Claims">
@@ -2461,6 +2657,11 @@ export default function MacroPage() {
                 }}
               />
             </div>
+            <HistoryTable
+              title="Latest 6 months"
+              rows={economy?.labour.joltsJobOpenings.recentHistory ?? []}
+              unit="Openings (thousands)"
+            />
           </DataCard>
         </div>
       </section>
@@ -2470,13 +2671,21 @@ export default function MacroPage() {
         <h2 className="mb-4 text-lg font-semibold">Market Regime</h2>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card title="Global Risk" value="Neutral" description="Risk-on / risk-off environment" />
+          <Card title="Global Risk" value="—" description="Data source not connected" />
 
-          <Card title="USD Macro Bias" value="Neutral" description="Score: 0" />
+          <Card
+            title="USD Macro Bias"
+            value={economy?.usdMacroState.bias ?? "—"}
+            description="USD macro assessment"
+          />
 
-          <Card title="Fed Bias" value="Neutral" description="Rate expectations" />
+          <Card
+            title="Fed Repricing"
+            value={economy?.usdMacroState.policyImpulse.oneWeek ?? "—"}
+            description="1W Polymarket repricing"
+          />
 
-          <Card title="DXY" value="—" description="Waiting for market data" />
+          <Card title="DXY" value="—" description="Data source not connected" />
         </div>
       </section>
 
@@ -2485,13 +2694,21 @@ export default function MacroPage() {
         <h2 className="mb-4 text-lg font-semibold">US Rates & Treasury</h2>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card title="US 2Y Yield" value="—" description="Fed policy expectations" />
+          <Card
+            title="US 2Y Yield"
+            value={formatPercent(economy?.usRatesYieldCurve.maturities["2Y"].latest.value ?? null)}
+            description="Fed policy expectations"
+          />
 
-          <Card title="US 10Y Yield" value="—" description="Growth, inflation & term premium" />
+          <Card
+            title="US 10Y Yield"
+            value={formatPercent(economy?.usRatesYieldCurve.maturities["10Y"].latest.value ?? null)}
+            description="Growth, inflation & term premium"
+          />
 
           <Card
             title="US 30Y Yield"
-            value="—"
+            value={formatPercent(economy?.usRatesYieldCurve.maturities["30Y"].latest.value ?? null)}
             description="Long-term fiscal & inflation expectations"
           />
         </div>
@@ -2500,13 +2717,13 @@ export default function MacroPage() {
           <Card
             title="Next Treasury Auction"
             value="—"
-            description="Waiting for Treasury calendar"
+            description="Treasury calendar not connected"
           />
 
           <Card
             title="Next Treasury Buyback"
             value="—"
-            description="Waiting for Treasury buyback schedule"
+            description="Treasury buyback schedule not connected"
           />
         </div>
       </section>
@@ -2554,8 +2771,10 @@ export default function MacroPage() {
           {currencies.map((item) => (
             <div key={item.currency} className="grid grid-cols-3 border-b p-4 last:border-b-0">
               <span className="font-semibold">{item.currency}</span>
-              <span>{item.bias}</span>
-              <span>{item.score}</span>
+              <span>
+                {item.currency === "USD" ? (economy?.usdMacroState.bias ?? "—") : "Not connected"}
+              </span>
+              <span>—</span>
             </div>
           ))}
         </div>
@@ -2570,7 +2789,7 @@ export default function MacroPage() {
             <p className="font-semibold">Macro Thesis</p>
 
             <p className="mt-3 text-sm text-muted-foreground">
-              Waiting for macro data and weekly analysis.
+              {economy?.usdMacroState.explanation ?? "Loading macro assessment…"}
             </p>
           </div>
 
@@ -2578,7 +2797,7 @@ export default function MacroPage() {
             <p className="font-semibold">What Changes the Bias?</p>
 
             <p className="mt-3 text-sm text-muted-foreground">
-              Define the conditions that invalidate the current macro thesis.
+              {economy?.usdMacroState.whatChangesBias.join(" ") ?? "Loading bias conditions…"}
             </p>
           </div>
         </div>
