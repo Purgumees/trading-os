@@ -14,6 +14,7 @@ import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
 import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
+import { RatesRegimeGuide } from "@/components/RatesRegimeGuide";
 import { TreasuryPanel } from "@/components/TreasuryPanel";
 import { HistoricalTable } from "@/components/HistoricalTable";
 import {
@@ -1585,119 +1586,128 @@ export default function MacroPage() {
           </p>
         </div>
         <article className="rounded-xl border p-5">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-3 font-medium">Horizon</th>
-                  <th className="py-2 pr-3 font-medium">2Y</th>
-                  <th className="py-2 pr-3 font-medium">10Y</th>
-                  <th className="py-2 pr-3 font-medium">30Y</th>
-                  <th className="py-2 pr-3 font-medium">Yield Curve</th>
-                  <th className="py-2 pr-3 font-medium">Regime</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(
-                  [
-                    ["oneDay", "1D"],
-                    ["oneWeek", "1W"],
-                    ["oneMonth", "1M"],
-                  ] as const
-                ).map(([key, label]) => {
-                  const horizon = economy?.usRatesRegime.horizons[key];
-                  return (
-                    <tr className="border-b last:border-0" key={key}>
-                      <td className="py-2 pr-3 font-medium">{label}</td>
-                      <td className="py-2 pr-3">
-                        {formatBasisPoints(horizon?.changes["2Y"] ?? null)}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {formatBasisPoints(horizon?.changes["10Y"] ?? null)}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {formatBasisPoints(horizon?.changes["30Y"] ?? null)}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span className="font-medium">
-                          {horizon?.curveDirection === "MIXED"
-                            ? "MIXED / UNCLEAR"
-                            : (horizon?.curveDirection ?? "UNAVAILABLE")}
-                        </span>
-                        <span className="block text-xs italic text-muted-foreground">
-                          {curveDirectionExplanation(
-                            horizon?.curveDirection ?? "UNAVAILABLE",
-                            horizon?.explanation ?? "",
-                          )}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">Spread changes</span>
-                        <span>2s10s {formatBasisPoints(horizon?.changes["2s10s"] ?? null)}</span>
-                        <span className="block">
-                          2s30s {formatBasisPoints(horizon?.changes["2s30s"] ?? null)}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span className="font-medium">{horizon?.regime ?? "UNAVAILABLE"}</span>
-                        <span className="block text-xs italic text-muted-foreground">
-                          {ratesRegimeExplanation(
-                            horizon?.regime ?? "UNAVAILABLE",
-                            horizon?.explanation ?? "",
-                          )}
-                        </span>
-                      </td>
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[650px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-3 font-medium">Horizon</th>
+                      <th className="py-2 pr-3 font-medium">2Y</th>
+                      <th className="py-2 pr-3 font-medium">10Y</th>
+                      <th className="py-2 pr-3 font-medium">30Y</th>
+                      <th className="py-2 pr-3 font-medium">Yield Curve</th>
+                      <th className="py-2 pr-3 font-medium">Regime</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 grid gap-2 border-t pt-4 text-sm">
-            <p>
-              <span className="font-medium">Primary 1W Regime: </span>
-              {economy?.usRatesRegime.primaryRegime ?? "UNAVAILABLE"}
-              <span className="block text-xs italic text-muted-foreground">
-                {ratesRegimeExplanation(
-                  economy?.usRatesRegime.horizons.oneWeek.regime ?? "UNAVAILABLE",
-                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
-                )}
-              </span>
-            </p>
-            <p>
-              <span className="font-medium">Yield Curve: </span>
-              {economy?.usRatesRegime.horizons.oneWeek.curveDirection === "MIXED"
-                ? "MIXED / UNCLEAR"
-                : (economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE")}
-              <span className="block text-xs italic text-muted-foreground">
-                {curveDirectionExplanation(
-                  economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE",
-                  economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
-                )}
-              </span>
-            </p>
-            <p>
-              <span className="font-medium">FRONT-END</span>
-              <span className="block text-xs italic text-muted-foreground">
-                Shorter-term yields, especially the 2Y, which are highly sensitive to Fed
-                expectations.
-              </span>
-            </p>
-            <p>
-              <span className="font-medium">LONG-END</span>
-              <span className="block text-xs italic text-muted-foreground">
-                Longer-term yields such as the 10Y and 30Y.
-              </span>
-            </p>
-            <p>
-              <span className="font-medium">Fed × 2Y confirmation (FRONT-END): </span>
-              {economy?.usRatesRegime.frontEndFedConfirmation ?? "UNAVAILABLE"}
-              <span className="ml-1 text-xs text-muted-foreground">
-                (Fed repricing source: Polymarket)
-              </span>
-            </p>
-            <p className="text-muted-foreground">
-              <span className="font-medium text-foreground">Explanation: </span>
-              {economy?.usRatesRegime.explanation ?? "US rates regime data is unavailable."}
-            </p>
+                  </thead>
+                  <tbody>
+                    {(
+                      [
+                        ["oneDay", "1D"],
+                        ["oneWeek", "1W"],
+                        ["oneMonth", "1M"],
+                      ] as const
+                    ).map(([key, label]) => {
+                      const horizon = economy?.usRatesRegime.horizons[key];
+                      return (
+                        <tr className="border-b last:border-0" key={key}>
+                          <td className="py-2 pr-3 font-medium">{label}</td>
+                          <td className="py-2 pr-3">
+                            {formatBasisPoints(horizon?.changes["2Y"] ?? null)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {formatBasisPoints(horizon?.changes["10Y"] ?? null)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {formatBasisPoints(horizon?.changes["30Y"] ?? null)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            <span className="font-medium">
+                              {horizon?.curveDirection === "MIXED"
+                                ? "MIXED / UNCLEAR"
+                                : (horizon?.curveDirection ?? "UNAVAILABLE")}
+                            </span>
+                            <span className="block text-xs italic text-muted-foreground">
+                              {curveDirectionExplanation(
+                                horizon?.curveDirection ?? "UNAVAILABLE",
+                                horizon?.explanation ?? "",
+                              )}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              Spread changes
+                            </span>
+                            <span>
+                              2s10s {formatBasisPoints(horizon?.changes["2s10s"] ?? null)}
+                            </span>
+                            <span className="block">
+                              2s30s {formatBasisPoints(horizon?.changes["2s30s"] ?? null)}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-3">
+                            <span className="font-medium">{horizon?.regime ?? "UNAVAILABLE"}</span>
+                            <span className="block text-xs italic text-muted-foreground">
+                              {ratesRegimeExplanation(
+                                horizon?.regime ?? "UNAVAILABLE",
+                                horizon?.explanation ?? "",
+                              )}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 grid gap-2 border-t pt-4 text-sm">
+                <p>
+                  <span className="font-medium">Primary 1W Regime: </span>
+                  {economy?.usRatesRegime.primaryRegime ?? "UNAVAILABLE"}
+                  <span className="block text-xs italic text-muted-foreground">
+                    {ratesRegimeExplanation(
+                      economy?.usRatesRegime.horizons.oneWeek.regime ?? "UNAVAILABLE",
+                      economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
+                    )}
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">Yield Curve: </span>
+                  {economy?.usRatesRegime.horizons.oneWeek.curveDirection === "MIXED"
+                    ? "MIXED / UNCLEAR"
+                    : (economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE")}
+                  <span className="block text-xs italic text-muted-foreground">
+                    {curveDirectionExplanation(
+                      economy?.usRatesRegime.horizons.oneWeek.curveDirection ?? "UNAVAILABLE",
+                      economy?.usRatesRegime.horizons.oneWeek.explanation ?? "",
+                    )}
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">FRONT-END</span>
+                  <span className="block text-xs italic text-muted-foreground">
+                    Shorter-term yields, especially the 2Y, which are highly sensitive to Fed
+                    expectations.
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">LONG-END</span>
+                  <span className="block text-xs italic text-muted-foreground">
+                    Longer-term yields such as the 10Y and 30Y.
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium">Fed × 2Y confirmation (FRONT-END): </span>
+                  {economy?.usRatesRegime.frontEndFedConfirmation ?? "UNAVAILABLE"}
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    (Fed repricing source: Polymarket)
+                  </span>
+                </p>
+                <p className="text-muted-foreground">
+                  <span className="font-medium text-foreground">Explanation: </span>
+                  {economy?.usRatesRegime.explanation ?? "US rates regime data is unavailable."}
+                </p>
+              </div>
+            </div>
+            <RatesRegimeGuide />
           </div>
         </article>
       </section>
@@ -2712,7 +2722,6 @@ export default function MacroPage() {
             description="Long-term fiscal & inflation expectations"
           />
         </div>
-
       </section>
 
       <TreasuryPanel />
