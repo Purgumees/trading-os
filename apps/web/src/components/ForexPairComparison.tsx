@@ -11,6 +11,7 @@ import {
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { MacroObservationTable } from "./MacroObservationTable";
+import { PairMacroConclusion } from "./PairMacroConclusion";
 const categories = [
   {
     key: "policy",
@@ -203,11 +204,7 @@ export function ForexPairComparison({ initialPair = "EURUSD" }: { initialPair?: 
               );
             })}
           </div>
-          <p className="mt-5 text-sm text-muted-foreground">
-            These are observed macro differences. Currency direction also depends on surprises
-            versus expectations and the expected policy path; this comparison does not label a pair
-            as an automatic buy or sell.
-          </p>
+          <PairMacroConclusion data={data} />
         </>
       )}
     </section>

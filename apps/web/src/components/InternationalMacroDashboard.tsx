@@ -9,9 +9,7 @@ import {
   type Observation,
 } from "@/lib/international-macro";
 import { macroDateLabel } from "@/lib/macro-date-label";
-import { ForexPairComparison } from "./ForexPairComparison";
 import { MacroObservationTable } from "./MacroObservationTable";
-import type { ForexPair } from "@/lib/pair-macro";
 import { MacroRegionNav } from "./MacroRegionNav";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { QuarterlyGrowthHistory } from "./QuarterlyGrowthHistory";
@@ -90,13 +88,6 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
   return (
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={country} />
-      <ForexPairComparison
-        initialPair={
-          ({ jpy: "USDJPY", aud: "AUDUSD", gbp: "GBPUSD", cad: "USDCAD", nzd: "NZDUSD" } as const)[
-            country
-          ] as ForexPair
-        }
-      />
       <header className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
         <h1 className="text-3xl font-bold">
           {c.flag} {c.name} · {country.toUpperCase()} MACRO

@@ -1,7 +1,6 @@
 "use client";
 
 import { macroDateLabel } from "@/lib/macro-date-label";
-import { ForexPairComparison } from "@/components/ForexPairComparison";
 import { MacroRegionNav } from "@/components/MacroRegionNav";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
@@ -644,7 +643,6 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
         </p>
       </div>
 
-      <ForexPairComparison />
 
       <MacroRegionNav region={region} />
       {region === "euro" && (

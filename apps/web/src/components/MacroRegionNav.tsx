@@ -4,6 +4,7 @@ export function MacroRegionNav({ region }: { region: string }) {
   const items = [
     ["euro", "🇪🇺 EURO AREA"],
     ["dxy", "🇺🇸 USA / DXY"],
+    ["pairs", "PAIRS · COMPARISON"],
     ...Object.entries(countries).map(([key, c]) => [key, `${c.flag} ${key.toUpperCase()}`]),
   ];
   return (
