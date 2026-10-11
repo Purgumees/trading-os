@@ -1799,7 +1799,7 @@ export default function MacroPage() {
                 </tr>
               </thead>
               <tbody>
-                {(["2Y", "5Y", "10Y", "30Y"] as const).map((maturity) => {
+                {(["2Y", "10Y", "30Y"] as const).map((maturity) => {
                   const rate = economy?.usRatesYieldCurve.maturities[maturity];
                   const horizons = [
                     { key: "oneDay", label: "1D" },
@@ -1866,7 +1866,6 @@ export default function MacroPage() {
                   [
                     ["2Y-10Y", "2Y–10Y"],
                     ["2Y-30Y", "2Y–30Y"],
-                    ["5Y-30Y", "5Y–30Y"],
                   ] as const
                 ).map(([key, label]) => {
                   const curve = economy?.usRatesYieldCurve.yieldCurve[key];
