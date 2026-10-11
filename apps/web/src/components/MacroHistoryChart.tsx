@@ -1,5 +1,6 @@
 "use client";
 
+import { macroDateLabel } from "@/lib/macro-date-label";
 import {
   CartesianGrid,
   Line,
@@ -27,6 +28,10 @@ export function MacroHistoryChart({
   if (data.every((row) => /^\d{4}/.test(row.date)))
     data.sort((a, b) => a.date.localeCompare(b.date));
   if (!data.some((row) => series.some((s) => typeof row[s.key] === "number"))) return null;
+  const daily = data.some(
+    (row) =>
+      row.date.includes("T") || (/^\d{4}-\d{2}-\d{2}$/.test(row.date) && !row.date.endsWith("-01")),
+  );
   const latest = Object.fromEntries(
     series.map((s) => [s.key, data.findLastIndex((row) => typeof row[s.key] === "number")]),
   );
@@ -52,6 +57,8 @@ export function MacroHistoryChart({
             <CartesianGrid stroke="currentColor" opacity={0.12} vertical={false} />
             <XAxis
               dataKey="date"
+              tickFormatter={(date) => macroDateLabel(String(date), daily)}
+              interval="preserveStartEnd"
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               tickLine={false}
               axisLine={false}
@@ -66,6 +73,7 @@ export function MacroHistoryChart({
               tickFormatter={(v) => Number(v).toLocaleString("en", { maximumFractionDigits: 2 })}
             />
             <Tooltip
+              labelFormatter={(date) => macroDateLabel(String(date), daily)}
               contentStyle={{
                 background: "#0f172a",
                 borderColor: "#334155",

@@ -1,5 +1,6 @@
 "use client";
 
+import { macroDateLabel } from "@/lib/macro-date-label";
 import Link from "next/link";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
@@ -309,13 +310,7 @@ function formatFreshness(seconds: number | null) {
 }
 
 function formatMonth(date: string) {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return Number.isNaN(parsed.getTime())
-    ? "—"
-    : new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        timeZone: "UTC",
-      }).format(parsed);
+  return macroDateLabel(date);
 }
 
 function movement(current: number | null, previous: number | null) {
@@ -395,7 +390,7 @@ function HistoryTable({
               className={`border-t ${index === rows.length - 1 ? "bg-amber-500/10 font-semibold" : ""}`}
             >
               <td className="p-2">
-                {row.date ?? "Unavailable"}
+                {row.date ? macroDateLabel(row.date, title.includes("weeks")) : "Unavailable"}
                 {index === rows.length - 1 ? " ◆" : ""}
               </td>
               <td className="p-2 text-right">{formatNumber(row.value)}</td>
@@ -1255,7 +1250,9 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
                                   className={`border-b last:border-0 ${month.date === series.latestObservationDate?.slice(0, 7) ? "bg-amber-500/10 font-semibold" : ""}`}
                                   key={month.date}
                                 >
-                                  <td className="py-2 pr-2 font-medium">{month.date}</td>
+                                  <td className="py-2 pr-2 font-medium">
+                                    {macroDateLabel(month.date)}
+                                  </td>
                                   <td className="py-2 pr-2">{formatNumber(month.index)}</td>
                                   <td className="py-2 pr-2">{formatPercent(month.yoy)}</td>
                                   <td className="py-2 pr-2">{formatPercent(month.mom)}</td>

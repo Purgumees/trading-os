@@ -5,6 +5,7 @@
  * Shows most recent N observations in chronological order (oldest → newest)
  */
 
+import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import type { ReactNode } from "react";
 
@@ -75,7 +76,12 @@ export function HistoricalTable({ title, columns, rows, compact = true }: Histor
             >
               {columns.map((col) => {
                 const value = row[col.key];
-                const formatted = col.format ? col.format(value) : String(value ?? "—");
+                const formatted =
+                  col.key === "date"
+                    ? macroDateLabel(String(value ?? "—"))
+                    : col.format
+                      ? col.format(value)
+                      : String(value ?? "—");
                 return (
                   <td
                     key={`${row.date}-${col.key}`}
