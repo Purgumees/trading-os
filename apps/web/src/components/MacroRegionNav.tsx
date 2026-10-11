@@ -3,6 +3,7 @@ import { countries } from "@/lib/international-macro";
 export function MacroRegionNav({ region }: { region: string }) {
   const items = [
     ["pairs", "PAIRS · COMPARISON"],
+    ["weekly", "WEEKLY OUTLOOK"],
     ["euro", "🇪🇺 EURO AREA"],
     ["dxy", "🇺🇸 USA / DXY"],
     ...Object.entries(countries).map(([key, c]) => [key, `${c.flag} ${key.toUpperCase()}`]),
