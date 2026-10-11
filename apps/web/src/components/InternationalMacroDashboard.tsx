@@ -11,6 +11,8 @@ import {
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroObservationTable } from "./MacroObservationTable";
 import { MacroRegionNav } from "./MacroRegionNav";
+import { InternationalYields } from "./InternationalYields";
+import { CentralBankWatch } from "./CentralBankWatch";
 import { MacroPageHeader } from "./MacroPageHeader";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { QuarterlyGrowthHistory } from "./QuarterlyGrowthHistory";
@@ -90,6 +92,8 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={country} />
       <MacroPageHeader title={`${c.flag} ${c.name} · ${country.toUpperCase()} MACRO`} />
+      <CentralBankWatch currency={country.toUpperCase() as "JPY" | "AUD" | "GBP" | "CAD" | "NZD"} policy={data?.policy.at(-1)?.value} />
+      <InternationalYields country={country} />
       {!data && (
         <p role="status">
           {error ? "Unable to load data. Please refresh to retry." : "Loading official macro data…"}
@@ -110,7 +114,7 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
             <Metric
               title={`${c.bank} · policy rate`}
               rows={data.policy}
-              source="https://data.bis.org/topics/CBPOL"
+              source={country === "aud" ? "https://www.rba.gov.au/statistics/tables/" : "https://data.bis.org/topics/CBPOL"}
               explanation={`Higher expected ${country.toUpperCase()} interest rates relative to other countries can support the currency. Rate cuts can weigh on it. Compare the expected path with the Fed: the current rate alone is not a trading signal.`}
             />
             <section className="rounded-xl border p-5 min-w-0">

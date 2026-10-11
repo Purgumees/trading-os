@@ -2,6 +2,7 @@
 
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroRegionNav } from "@/components/MacroRegionNav";
+import { CentralBankWatch } from "@/components/CentralBankWatch";
 import { MacroPageHeader } from "@/components/MacroPageHeader";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
@@ -637,6 +638,7 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={region} />
       <MacroPageHeader title={region === "euro" ? "🇪🇺 Euro Area · EUR MACRO" : "🇺🇸 USA · DXY MACRO"} />
+      {region === "euro" && <CentralBankWatch currency="EUR" />}
       {region === "euro" && (
         <>
 

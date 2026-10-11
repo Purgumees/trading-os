@@ -11,6 +11,9 @@ import {
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { MacroObservationTable } from "./MacroObservationTable";
+import { InternationalYields } from "./InternationalYields";
+import { countries, type Country } from "@/lib/international-macro";
+import { CentralBankWatch } from "./CentralBankWatch";
 import { PairMacroConclusion } from "./PairMacroConclusion";
 const categories = [
   {
@@ -172,6 +175,7 @@ export function ForexPairComparison({ initialPair = "EURUSD" }: { initialPair?: 
               </p>
             ))}
           <RateDifferential data={data} />
+          <details className="mt-5"><summary className="cursor-pointer font-semibold">Central bank expectations · {data.base.currency} vs {data.quote.currency}</summary><div className="mt-3 grid gap-3 md:grid-cols-2"><CentralBankWatch currency={data.base.currency} policy={data.base.policy.at(-1)?.value} /><CentralBankWatch currency={data.quote.currency} policy={data.quote.policy.at(-1)?.value} /></div></details>
           <div className="mt-5 space-y-5">
             {categories.map((metric) => {
               const b = comparisonSeries(data.base)[metric.key],
@@ -202,6 +206,7 @@ export function ForexPairComparison({ initialPair = "EURUSD" }: { initialPair?: 
               );
             })}
           </div>
+          <details className="mt-5"><summary className="cursor-pointer font-semibold">Government bond yields · {data.base.currency} vs {data.quote.currency}</summary><div className="mt-3 grid gap-3 md:grid-cols-2">{[data.base.currency,data.quote.currency].map(c=>Object.hasOwn(countries,c.toLowerCase())?<InternationalYields key={c} country={c.toLowerCase() as Country}/>:<div key={c} className="rounded-xl border p-5"><h3 className="font-semibold">{c} yields</h3><a className="mt-2 inline-block text-sm underline" href={c==='USD'?'/dxy':'/euro'}>Open {c} macro dashboard for existing yields and rate context ↗</a><p className="mt-2 text-xs text-muted-foreground">Cross-country yields use different definitions; no automatic spread is computed here.</p></div>)}</div></details>
           <PairMacroConclusion data={data} />
         </>
       )}

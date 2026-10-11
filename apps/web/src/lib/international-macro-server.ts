@@ -1,5 +1,6 @@
 import {
   bisObservations,
+  rbaPolicyObservations,
   cpiHistory,
   countries,
   nzGdp,
@@ -65,6 +66,7 @@ async function newZealandGdp() {
 export async function countryData(country: Country): Promise<CountryData> {
   const c = countries[country];
   const results = await Promise.allSettled([
+    country === "aud" ? download("https://www.rba.gov.au/statistics/tables/csv/f1-data.csv").then(r=>r.text()).then(rbaPolicyObservations) :
     download(
       `https://stats.bis.org/api/v1/data/WS_CBPOL/D.${c.area}?startPeriod=2025-01-01&format=csv`,
     )

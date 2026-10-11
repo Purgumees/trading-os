@@ -157,3 +157,15 @@ export function monthEndHistory(rows: Observation[]) {
     months.set(r.date.slice(0, 7), r);
   return [...months.values()];
 }
+
+export function rbaPolicyObservations(content:string):Observation[] {
+  const rows=parseCsv(content.replace(/^\uFEFF/,''));
+  const header=rows.findIndex(r=>r[0]==='Series ID');
+  const column=rows[header]?.indexOf('FIRMMCRTD') ?? -1;
+  if(header<0||column<0)throw Error('RBA cash-rate target series unavailable');
+  return rows.slice(header+1).flatMap(r=>{
+    const raw=r[column];const time=Date.parse(`${r[0]} UTC`);
+    if(!raw?.trim()||!Number.isFinite(Number(raw))||!Number.isFinite(time)||!/^\d/.test(r[0]??''))return [];
+    return [{date:new Date(time).toISOString().slice(0,10),value:Number(raw)}];
+  }).sort((a,b)=>a.date.localeCompare(b.date)).slice(-180);
+}

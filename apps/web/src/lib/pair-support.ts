@@ -24,7 +24,7 @@ export function pairSupport(data: PairData, asOf = data.base.fetchedAt) {
     const old = matchedDifference(b.policy.filter(r => r.date <= date), q.policy.filter(r => r.date <= date));
     if (old && target.getTime() - periodEnd(old.date) <= 7 * 86400000) {
       const change = rate.value - old.value;
-      signals.push({label: "Policy gap · 1-month change", direction: direction(change), period: rate.date, detail: `${old.date} → ${rate.date}: ${signed(change)} change in ${data.base.currency} minus ${data.quote.currency}. Current gap ${signed(rate.value)} is shown separately; expected future rates are missing.`});
+      signals.push({label: "Policy gap · 1-month change", direction: direction(change), period: rate.date, detail: `${old.date} → ${rate.date}: ${signed(change)} change in ${data.base.currency} minus ${data.quote.currency}. Current gap ${signed(rate.value)} is shown separately; expected future rates are not included in this score.`});
     } else signals.push({label: "Policy gap · 1-month change", direction: null, detail: "No matched observations near the calendar-month comparison date."});
   } else signals.push({label: "Policy gap · 1-month change", direction: null, detail: "Missing or stale shared policy-rate date (maximum age 21 days)."});
   const gdp = matchedDifference(b.gdp, q.gdp);
