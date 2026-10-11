@@ -83,6 +83,7 @@ type EconomyState = {
   };
   growth: {
     gdp: {
+      rawObservations: Array<{ date: string; value: number }>;
       latest: {
         value: number | null;
         date: string | null;
@@ -468,6 +469,11 @@ function Card({
 export default function MacroPage() {
   const [selectedPair, setSelectedPair] = useState<ForexPair>("EURUSD");
   const [economy, setEconomy] = useState<EconomyState | null>(null);
+  const usaGdpObservations = (economy?.growth.gdp.rawObservations ?? []).map((row) => ({
+    date: `${row.date.slice(0, 4)}-Q${Math.floor((Number(row.date.slice(5, 7)) - 1) / 3) + 1}`,
+    value: row.value,
+  }));
+  const usaGdpHistory = quarterlyGrowthHistory(usaGdpObservations);
   const [economyError, setEconomyError] = useState<string | null>(null);
   const [euroAreaInflation, setEuroAreaInflation] = useState<EuroAreaInflationState | null>(null);
   const [euroInflationError, setEuroInflationError] = useState<string | null>(null);
@@ -1987,14 +1993,18 @@ export default function MacroPage() {
           <DataCard title="Economic Growth (Real GDP)">
             <div className="grid grid-cols-2 gap-4">
               <ValueCell
-                label="Current QoQ annualized"
-                value={formatPercent(economy?.growth.gdp.latest.qoqAnnualized ?? null)}
-                detail={formatDate(economy?.growth.gdp.latest.date ?? null)}
+                label="QoQ"
+                value={formatPercent(usaGdpHistory.rows.at(-1)?.qoq ?? null)}
+                detail={usaGdpHistory.latestQuarter ?? "—"}
               />
               <ValueCell
-                label="Previous quarter QoQ annualized"
-                value={formatPercent(economy?.growth.gdp.recentHistory[1]?.qoqAnnualized ?? null)}
-                detail={formatDate(economy?.growth.gdp.previousQuarter.date ?? null)}
+                label="QoQ annualized"
+                value={formatPercent(economy?.growth.gdp.latest.qoqAnnualized ?? null)}
+              />
+              <ValueCell
+                label="Previous quarter growth (QoQ)"
+                value={formatPercent(usaGdpHistory.rows.at(-2)?.qoq ?? null)}
+                detail={usaGdpHistory.rows.at(-2)?.date ?? "—"}
               />
               <ValueCell
                 label="YoY"
@@ -2021,14 +2031,11 @@ export default function MacroPage() {
                     ? "The economy is contracting."
                     : "Economic output is unchanged quarter over quarter."}
             </p>
-            <HistoryTable
-              title="Latest 6 quarters"
-              rows={(economy?.growth.gdp.recentHistory ?? [])
-                .slice(0, 6)
-                .reverse()
-                .map((row) => ({ date: row.date, value: row.qoqAnnualized }))}
-              unit="QoQ annualized (%)"
-            />
+            <QuarterlyGrowthHistory observations={usaGdpObservations} label="Real GDP" />
+            <p className="mt-2 text-xs text-muted-foreground">
+              QoQ annualized shows the yearly pace if this quarter’s growth continued for four
+              quarters. The history table uses actual quarterly growth, as in the euro area.
+            </p>
           </DataCard>
 
           <DataCard title="Consumer Spending (Real PCE)">

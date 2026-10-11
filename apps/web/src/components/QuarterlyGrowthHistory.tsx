@@ -28,7 +28,7 @@ export function QuarterlyGrowthHistory({
       <div className="mt-3 overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <caption className="px-3 py-2 text-left text-xs text-muted-foreground">
-            Latest 6 quarters · growth, not euro amounts
+            Latest 6 quarters · percentage growth
           </caption>
           <thead>
             <tr className="border-b text-muted-foreground">

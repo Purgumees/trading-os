@@ -1503,6 +1503,7 @@ export async function GET() {
               value: gdpPreviousQuarter?.value ?? null,
               date: gdpPreviousQuarter?.date ?? null,
             },
+            rawObservations: gdpData,
             recentHistory: buildQuarterlyHistory(gdpData, 8),
           },
           realPce: {
