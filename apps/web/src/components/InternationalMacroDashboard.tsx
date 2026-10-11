@@ -11,6 +11,7 @@ import {
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroObservationTable } from "./MacroObservationTable";
 import { MacroRegionNav } from "./MacroRegionNav";
+import { MacroPageHeader } from "./MacroPageHeader";
 import { MacroHistoryChart } from "./MacroHistoryChart";
 import { QuarterlyGrowthHistory } from "./QuarterlyGrowthHistory";
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${v.toFixed(2)}%`);
@@ -88,14 +89,7 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
   return (
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={country} />
-      <header className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
-        <h1 className="text-3xl font-bold">
-          {c.flag} {c.name} · {country.toUpperCase()} MACRO
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Growth, inflation, labour and monetary policy · ◆ marks the latest published observation.
-        </p>
-      </header>
+      <MacroPageHeader title={`${c.flag} ${c.name} · ${country.toUpperCase()} MACRO`} />
       {!data && (
         <p role="status">
           {error ? "Unable to load data. Please refresh to retry." : "Loading official macro data…"}

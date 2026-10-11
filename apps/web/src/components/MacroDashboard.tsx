@@ -2,6 +2,7 @@
 
 import { macroDateLabel } from "@/lib/macro-date-label";
 import { MacroRegionNav } from "@/components/MacroRegionNav";
+import { MacroPageHeader } from "@/components/MacroPageHeader";
 import { MacroHistoryChart } from "@/components/MacroHistoryChart";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
@@ -633,26 +634,12 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
   }, [region]);
 
   return (
-    <main className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
-          {region === "euro" ? "Euro Area · EUR" : "USA · DXY"} Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Macro environment, currency bias and weekly forecast.
-        </p>
-      </div>
-
-
+    <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={region} />
+      <MacroPageHeader title={region === "euro" ? "🇪🇺 Euro Area · EUR MACRO" : "🇺🇸 USA · DXY MACRO"} />
       {region === "euro" && (
         <>
-          <div id="euro" className="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/5 p-5">
-            <h2 className="text-2xl font-bold">🇪🇺 EURO AREA — EUR MACRO</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Eurozone growth, employment and inflation from Eurostat.
-            </p>
-          </div>
+
 
           <section className="mb-8">
             <div className="mb-4">
@@ -1240,12 +1227,7 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
       )}
       {region === "dxy" && (
         <>
-          <div id="usa" className="mb-8 rounded-xl border border-sky-500/40 bg-sky-500/5 p-5">
-            <h2 className="text-2xl font-bold">🇺🇸 USA — USD MACRO</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              US economic indicators, Federal Reserve expectations and Treasury yields.
-            </p>
-          </div>
+
 
           <section className="mb-8">
             <div className="mb-4">

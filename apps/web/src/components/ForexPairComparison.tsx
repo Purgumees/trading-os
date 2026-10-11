@@ -127,19 +127,17 @@ export function ForexPairComparison({ initialPair = "EURUSD" }: { initialPair?: 
   return (
     <section aria-label="Forex pair comparison" className="mb-8 rounded-xl border p-5">
       <h2 className="text-sm font-semibold">SELECT FOREX PAIR · MACRO COMPARISON</h2>
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Forex pairs">
-        {FOREX_PAIRS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            aria-pressed={p === pair}
-            onClick={() => setPair(p)}
-            className={`rounded-lg border px-4 py-2 text-sm font-medium ${p === pair ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-          >
-            {p}
-          </button>
-        ))}
-      </div>
+      {[{label: "MAIN USD PAIRS", pairs: FOREX_PAIRS.slice(0, 6)}, {label: "CROSS PAIRS", pairs: FOREX_PAIRS.slice(6)}].map(group => (
+        <div key={group.label} className="mt-3">
+          <h3 className="mb-2 text-xs font-semibold text-muted-foreground">{group.label}</h3>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={group.label}>
+            {group.pairs.map(p => <button key={p} type="button" aria-pressed={p === pair} onClick={() => setPair(p)}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium ${p === pair ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+              {p}
+            </button>)}
+          </div>
+        </div>
+      ))}
       <p className="mt-3 text-sm font-medium">
         Comparing {pair.slice(0, 3)} vs {pair.slice(3)} · rates, GDP, inflation and jobs
       </p>
