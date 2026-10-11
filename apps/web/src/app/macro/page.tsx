@@ -14,6 +14,8 @@ import type { UsdMacroStateResult } from "@/lib/usd-macro-state-engine";
 import type { EuroAreaInflationState } from "@/lib/euro-area-inflation-state-engine";
 import type { EuroAreaGrowthState } from "@/lib/euro-area-growth-state-engine";
 import type { EuroAreaLabourState } from "@/lib/euro-area-labour-state-engine";
+import { QuarterlyGrowthHistory } from "@/components/QuarterlyGrowthHistory";
+import { quarterlyGrowthHistory } from "@/lib/quarterly-growth-history";
 import { RatesRegimeGuide } from "@/components/RatesRegimeGuide";
 import { TreasuryPanel } from "@/components/TreasuryPanel";
 import { HistoricalTable } from "@/components/HistoricalTable";
@@ -721,33 +723,18 @@ export default function MacroPage() {
                       value={formatPercent(euroAreaGrowth.gdp.latest.yoy.value)}
                     />
                     <ValueCell
-                      label="Previous quarter level"
-                      value={formatNumber(euroAreaGrowth.gdp.previousQuarter.value)}
+                      label="Previous quarter growth (QoQ)"
+                      value={formatPercent(
+                        quarterlyGrowthHistory(euroAreaGrowth.gdp.rawObservations).rows.at(-2)
+                          ?.qoq ?? null,
+                      )}
                       detail={euroAreaGrowth.gdp.previousQuarter.date ?? "—"}
                     />
                   </div>
-                  {euroAreaGrowth.gdp.rawObservations &&
-                    euroAreaGrowth.gdp.rawObservations.length > 0 && (
-                      <HistoricalTable
-                        title="Latest 6 quarters"
-                        columns={[
-                          { key: "date", label: "Quarter", align: "left" },
-                          {
-                            key: "value",
-                            label: "Level (millions €)",
-                            align: "right",
-                            format: (v) => formatNumber(v, 0),
-                          },
-                        ]}
-                        rows={getLatestObservations(euroAreaGrowth.gdp.rawObservations, 6).map(
-                          (obs) => ({
-                            date: obs.date,
-                            value: obs.value,
-                          }),
-                        )}
-                        compact={true}
-                      />
-                    )}
+                  <QuarterlyGrowthHistory
+                    observations={euroAreaGrowth.gdp.rawObservations}
+                    label="Real GDP"
+                  />
                 </div>
                 <div className="rounded-lg border p-4">
                   <h3 className="font-semibold">Household / Private Consumption (Real)</h3>
@@ -771,29 +758,10 @@ export default function MacroPage() {
                       value={formatPercent(euroAreaGrowth.householdConsumption.latest.yoy.value)}
                     />
                   </div>
-                  {euroAreaGrowth.householdConsumption.rawObservations &&
-                    euroAreaGrowth.householdConsumption.rawObservations.length > 0 && (
-                      <HistoricalTable
-                        title="Latest 6 quarters"
-                        columns={[
-                          { key: "date", label: "Quarter", align: "left" },
-                          {
-                            key: "value",
-                            label: "Level (millions €)",
-                            align: "right",
-                            format: (v) => formatNumber(v, 0),
-                          },
-                        ]}
-                        rows={getLatestObservations(
-                          euroAreaGrowth.householdConsumption.rawObservations,
-                          6,
-                        ).map((obs) => ({
-                          date: obs.date,
-                          value: obs.value,
-                        }))}
-                        compact={true}
-                      />
-                    )}
+                  <QuarterlyGrowthHistory
+                    observations={euroAreaGrowth.householdConsumption.rawObservations}
+                    label="Real consumption"
+                  />
                 </div>
                 {(
                   [
