@@ -1,3 +1,4 @@
+import nzSnapshot from "./data/nz-government-yields.json";
 import ExcelJS from "exceljs";
 import { unzipSync } from "fflate";
 import { download } from "./international-macro-server";
@@ -44,6 +45,12 @@ export async function internationalYields(country:Country):Promise<YieldData>{
    result.definition="UK BOE · fitted nominal gilt spot yields (zero-coupon curve), not benchmark bond yields";result.note+=" Current-month archive only. These model-fitted spot rates should not be treated as the same series as US Treasury constant-maturity yields.";
   }
   if(!result.rows.length)throw Error('No valid yield observations');
- }catch(e){result.error=e instanceof Error?e.message:'Yield source unavailable';}
+ }catch(e){
+  if(country==='nzd'){
+   result.rows=nzSnapshot.rows;
+   result.definition="New Zealand RBNZ B2 · verified official snapshot · 2Y and 10Y government yields";
+   result.note=`Verified source snapshot captured ${nzSnapshot.capturedAt}; latest observation ${result.rows.at(-1)?.date}. Automatic refresh unavailable from this server; this is not a live feed. A constant 30Y series is not supplied.`;
+  }else result.error=e instanceof Error?e.message:'Yield source unavailable';
+ }
  return result;
 }
