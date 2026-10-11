@@ -293,11 +293,14 @@ export async function fetchEurostatLabourSeries(
       // Annual: treat as end of year (Dec 31)
       latestObsDate = new Date(`${latestDate}-12-31T23:59:59Z`);
     } else if (config.frequency === "Q") {
-      // Quarterly: parse Qx to month (Q1=01, Q2=04, Q3=07, Q4=10)
+      // Measure quarterly freshness from the end of the observation period,
+      // not the first day of the quarter (which overstates age by ~3 months).
       const [year, quarter] = latestDate.split("-");
-      const quarterNum = parseInt(quarter!.replace("Q", ""));
-      const month = String((quarterNum - 1) * 3 + 1).padStart(2, "0");
-      latestObsDate = new Date(`${year}-${month}-01T00:00:00Z`);
+      const quarterNum = Number(quarter!.replace("Q", ""));
+      if (!Number.isInteger(quarterNum) || quarterNum < 1 || quarterNum > 4) {
+        throw new Error(`Invalid quarterly observation date: ${latestDate}`);
+      }
+      latestObsDate = new Date(Date.UTC(Number(year), quarterNum * 3, 0, 23, 59, 59));
     } else {
       // Monthly: YYYY-MM format
       latestObsDate = new Date(`${latestDate}-01T00:00:00Z`);
