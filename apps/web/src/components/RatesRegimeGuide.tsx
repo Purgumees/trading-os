@@ -4,64 +4,72 @@ export function RatesRegimeGuide() {
       className="self-start rounded-xl border bg-muted/30 p-5 text-sm"
       aria-label="Yield regime explanation"
     >
-      <h3 className="font-semibold">What does this mean?</h3>
-      <p className="mt-2 text-muted-foreground">
-        Short-term = 2Y. Long-term = 10Y and 30Y. “Faster” means a larger change in basis points
-        over the same period.
-      </p>
-      <div className="mt-4 rounded-lg border bg-background p-3">
-        <p className="font-medium">Long-term yields falling faster</p>
-        <p className="mt-2 text-muted-foreground">
-          Example: 2Y falls 2 bp and 10Y falls 6 bp. The 10Y minus 2Y gap shrinks by 4 bp: bull
-          flattening.
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          Falling yields go with rising bond prices. Possible drivers include lower long-term
-          inflation or growth expectations, demand for safer assets, or a lower term premium. The
-          yield move alone cannot identify the cause.
-        </p>
-      </div>
-      <dl className="mt-4 space-y-3">
+      <h3 className="font-semibold">How can this affect USD / DXY?</h3>
+      <dl className="mt-4 space-y-4">
         <div>
-          <dt className="font-medium">Bull flattening</dt>
+          <dt className="font-medium">Bull flattening · USD impact depends on the cause</dt>
           <dd className="mt-1 text-muted-foreground">
-            Yields fall; long-term yields fall more. The gap narrows.
+            Falling long-term yields can weigh on USD if they reflect weaker US growth or lower
+            expected rates relative to other countries. But if investors seek safety, USD can
+            strengthen even while Treasury yields fall.
           </dd>
         </div>
         <div>
-          <dt className="font-medium">Bull steepening</dt>
+          <dt className="font-medium">Bull steepening · can weaken USD</dt>
           <dd className="mt-1 text-muted-foreground">
-            Yields fall; the 2Y falls more. The gap widens. This can accompany stronger expectations
-            of Fed cuts.
+            A larger fall in the 2Y can reflect more Fed cuts being priced in. If US rates fall
+            relative to foreign rates, the dollar loses some yield advantage. If foreign rates fall
+            even more, USD may still strengthen.
           </dd>
         </div>
         <div>
-          <dt className="font-medium">Bear steepening</dt>
+          <dt className="font-medium">
+            Bear steepening · higher yields do not guarantee stronger USD
+          </dt>
           <dd className="mt-1 text-muted-foreground">
-            Yields rise; long-term yields rise more. The gap widens. Possible drivers include
-            inflation concerns, bond supply or a higher term premium.
+            Rising long-term yields may support USD when driven by stronger US growth or higher real
+            yields. If they rise because investors demand extra compensation for inflation, debt
+            supply or fiscal risk, USD can stay weak despite higher yields.
           </dd>
         </div>
         <div>
-          <dt className="font-medium">Bear flattening</dt>
+          <dt className="font-medium">Bear flattening · can strengthen USD</dt>
           <dd className="mt-1 text-muted-foreground">
-            Yields rise; the 2Y rises more. The gap narrows. This can accompany expectations of
-            tighter Fed policy.
+            A larger rise in the 2Y can reflect more Fed hikes or fewer cuts. When this increases
+            expected US rates relative to foreign rates, it can support USD. An already-priced-in
+            move may have little new effect.
           </dd>
         </div>
       </dl>
-      <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
-        Bull / bear refers to bond prices. These labels alone do not determine USD, gold or stock
-        direction. Different horizons can show different regimes.
+      <div className="mt-4 rounded-lg border bg-background p-3">
+        <p className="font-medium">What to check for DXY</p>
+        <p className="mt-2 text-muted-foreground">
+          Compare US rate expectations with those abroad, especially the euro area. Then check risk
+          sentiment and whether rising yields reflect real returns or inflation. The curve label
+          alone gives no confirmed DXY direction.
+        </p>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Educational scenarios; this box does not calculate a live DXY signal.
       </p>
-      <a
-        className="mt-2 inline-block text-xs underline"
-        href="https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-86"
-        target="_blank"
-        rel="noreferrer"
-      >
-        SEC · bond prices and yields
-      </a>
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        <a
+          className="underline"
+          href="https://www.federalreserve.gov/econres/notes/ifdp-notes/the-sensitivity-of-the-us-dollar-exchange-rate-to-changes-in-monetary-policy-expectations-20170922.htm"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Fed · rates and USD
+        </a>
+        <a
+          className="underline"
+          href="https://www.federalreserve.gov/econres/notes/feds-notes/monetary-policy-and-exchange-rates-during-the-global-tightening-20240510.html"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Fed · rates and risk sentiment
+        </a>
+      </div>
     </aside>
   );
 }
