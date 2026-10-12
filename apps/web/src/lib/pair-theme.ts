@@ -3,7 +3,7 @@ import {FOREX_PAIRS,type ForexPair,type Currency} from './pair-macro';
 import {weeklyOutlook,type WeeklyData} from './weekly-outlook';
 import type {Observation} from './international-macro';
 import {yieldChanges} from './international-yields';
-export type ThemeData={weekly:WeeklyData;prices:Partial<Record<Currency,Observation[]>>;errors:string[]};
+export type ThemeData={weekly:WeeklyData;prices:Partial<Record<Currency,Observation[]>>;errors:string[];pricesSource?:{label:string;url:string}};
 export const themeReview=review;
 export function pairPriceRows(pair:ForexPair,prices:ThemeData['prices']){
  const b=prices[pair.slice(0,3) as Currency]??[],q=prices[pair.slice(3) as Currency]??[];const quote=new Map(q.map(r=>[r.date,r.value]));

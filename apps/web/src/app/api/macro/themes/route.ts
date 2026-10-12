@@ -1,15 +1,13 @@
 import {NextResponse} from 'next/server';
 import {GET as weekly} from '../weekly/route';
-import {fred} from '@/lib/international-macro-server';
-import {forexSeries,dollarValues} from '@/lib/pair-theme';
-import type {ThemeData} from '@/lib/pair-theme';
-import type {Currency} from '@/lib/pair-macro';
+import {download} from '@/lib/international-macro-server';
+import {ecbDollarPrices,ecbFxSource} from '@/lib/ecb-fx';
 export const maxDuration=60;
 export async function GET(){
- const weeklyTask=weekly().then(r=>r.json());
- const results=await Promise.allSettled(Object.entries(forexSeries).map(async([currency,series])=>({currency:currency as Currency,rows:dollarValues(await fred(series.id),series.inverse)})));
- const prices:ThemeData['prices']={};const errors:string[]=[];
- results.forEach((r,i)=>{if(r.status==='fulfilled')prices[r.value.currency]=r.value.rows;else errors.push(`${Object.keys(forexSeries)[i]} daily FX history unavailable`);});
- const allDates=[...new Set(Object.values(prices).flatMap(rows=>rows?.map(r=>r.date)??[]))];prices.USD=allDates.map(date=>({date,value:1}));
- return NextResponse.json({weekly:await weeklyTask,prices,errors});
+ const [data,fx]=await Promise.allSettled([
+  weekly().then(r=>r.json()),
+  download('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml').then(r=>r.text()).then(ecbDollarPrices),
+ ]);
+ if(data.status==='rejected')return NextResponse.json({error:'Weekly theme evidence unavailable'},{status:503});
+ return NextResponse.json({weekly:data.value,prices:fx.status==='fulfilled'?fx.value:{},pricesSource:{label:'ECB daily reference rates · same-source cross calculations · not live or execution prices',url:ecbFxSource},errors:fx.status==='rejected'?['ECB daily FX history unavailable; price confirmation withheld']:[]});
 }
