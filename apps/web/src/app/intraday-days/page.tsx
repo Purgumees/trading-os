@@ -1,2 +1,2 @@
-import {BestTradesGallery} from '@/components/BestTradesGallery';
-export default function Page(){return <main className="mx-auto max-w-7xl p-4 md:p-8"><BestTradesGallery key="intraday" mode="intraday"/></main>;}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/intraday-trades');}

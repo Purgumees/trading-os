@@ -9,7 +9,7 @@ function Thumbnail({id}:{id:string}){
  return url?<img src={url} alt="Trade example preview" className="h-44 w-full rounded-lg object-contain bg-background"/>:<div className="flex h-44 items-center justify-center rounded-lg border text-sm text-muted-foreground">{id?'Image unavailable in this browser':'Add your chart screenshot'}</div>;
 }
 export function BestTradesGallery({mode='swing'}:{mode?:'swing'|'intraday'}){
- const title=mode==='swing'?'Swing Trades':'Intraday Days',storageKey=mode==='swing'?BEST_TRADES_KEY:'trading-intraday-days-v1',defaultCategory=mode==='swing'?'Weekly Expansion Phases':'Intraday Setups';
+ const title=mode==='swing'?'Swing Trades':'Intraday Trades',storageKey=mode==='swing'?BEST_TRADES_KEY:'trading-intraday-days-v1',defaultCategory=mode==='swing'?'Weekly Expansion Phases':'Intraday Setups';
  const initialCollection=():BestTrades=>({...emptyCollection(),categories:[defaultCategory]});
  const [collection,setCollection]=useState<BestTrades|null>(null),[category,setCategory]=useState(defaultCategory),[selected,setSelected]=useState(''),[categoryName,setCategoryName]=useState(''),[status,setStatus]=useState(''),[blocked,setBlocked]=useState(false),[busy,setBusy]=useState(false),[showArchived,setShowArchived]=useState(false),[pending,setPending]=useState<{collection:BestTrades;images:Record<string,string>}|null>(null);
  useEffect(()=>{try{const raw=localStorage.getItem(storageKey);const c=raw?readCollection(JSON.parse(raw)):initialCollection();setCollection(c);setCategory(c.categories[0]!);}catch{setCollection(initialCollection());setBlocked(true);setStatus('Saved collection could not be read. Existing data will not be overwritten. Import a valid backup or export your work.');}},[]);
