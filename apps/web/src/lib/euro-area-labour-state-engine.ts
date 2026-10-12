@@ -528,15 +528,18 @@ export function calculateEuroAreaLabourState({
     ? [
         wageGrowth.latest.value !== null
           ? {
-              score: thresholdScore(
-                wageGrowth.latest.value,
-                [
-                  LABOUR_THRESHOLDS.wagePressure.yoyPercent.veryLow,
-                  LABOUR_THRESHOLDS.wagePressure.yoyPercent.low,
-                  LABOUR_THRESHOLDS.wagePressure.yoyPercent.neutral,
-                  LABOUR_THRESHOLDS.wagePressure.yoyPercent.high,
-                ]
-              ) ?? 0,
+              score:
+                -(
+                  thresholdScore(
+                    wageGrowth.latest.value,
+                    [
+                      LABOUR_THRESHOLDS.wagePressure.yoyPercent.veryLow,
+                      LABOUR_THRESHOLDS.wagePressure.yoyPercent.low,
+                      LABOUR_THRESHOLDS.wagePressure.yoyPercent.neutral,
+                      LABOUR_THRESHOLDS.wagePressure.yoyPercent.high,
+                    ]
+                  ) ?? 0
+                ),
               weight: LABOUR_WEIGHTS.wagePressure.wageGrowthYoY,
               label: "Wage growth level",
             }

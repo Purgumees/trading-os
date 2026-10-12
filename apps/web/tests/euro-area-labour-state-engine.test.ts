@@ -188,6 +188,35 @@ describe("Euro Area Labour State Engine v1", () => {
     expect(lowUnempState.assessment.currentLabourState.length).toBeGreaterThan(0);
   });
 
+  it("maps higher wage growth to higher wage pressure", () => {
+    const lowWages = makeQuarterlySeries("WAGE_GROWTH", 1);
+    const highWages = makeQuarterlySeries("WAGE_GROWTH", 6);
+    lowWages.observations = lowWages.observations.map((observation) => ({
+      ...observation,
+      value: 1,
+    }));
+    highWages.observations = highWages.observations.map((observation) => ({
+      ...observation,
+      value: 6,
+    }));
+
+    const lowState = calculateEuroAreaLabourState({
+      unemploymentSeries: null,
+      employmentSeries: null,
+      jobVacanciesSeries: null,
+      wageGrowthSeries: lowWages,
+    });
+    const highState = calculateEuroAreaLabourState({
+      unemploymentSeries: null,
+      employmentSeries: null,
+      jobVacanciesSeries: null,
+      wageGrowthSeries: highWages,
+    });
+
+    expect(lowState.assessment.wagePressure).toBe("RAPIDLY COOLING");
+    expect(highState.assessment.wagePressure).toBe("RISING RAPIDLY");
+  });
+
   it("indicates wage pressure unavailable when wage data not available", () => {
     const state = calculateEuroAreaLabourState({
       unemploymentSeries: makeMonthlySeries("UNR", 6),
