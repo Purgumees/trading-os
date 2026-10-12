@@ -4,6 +4,7 @@ export function MacroRegionNav({ region }: { region: string }) {
   const items = [
     ["pairs", "PAIRS · COMPARISON"],
     ["weekly", "WEEKLY OUTLOOK"],
+    ["forecast", "WEEKLY FORECAST"],
     ["themes", "PAIR THEMES"],
     ["euro", "🇪🇺 EURO AREA"],
     ["dxy", "🇺🇸 USA / DXY"],
