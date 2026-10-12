@@ -35,7 +35,8 @@ import { HoverHint } from "./ui/tooltip";
 const NAV = [
   { href: "/", label: "Macro dashboard", icon: LayoutDashboard },
   { href: "/forecast", label: "Weekly Forecast", icon: NotebookPen },
-  { href: "/best-trades", label: "Best Trades", icon: BookmarkPlus },
+  { href: "/swing-trades", label: "Swing Trades", icon: BookmarkPlus },
+  { href: "/intraday-days", label: "Intraday Days", icon: CalendarDays },
   { href: "/trade-dashboard", label: "Trade dashboard", icon: BarChart3 },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/journal", label: "Daily journal", icon: NotebookPen },
