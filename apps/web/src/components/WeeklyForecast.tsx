@@ -9,7 +9,7 @@ import {createForecast,readForecast,keyForWeek,nextWeek,safeChartUrl,putChart,ge
 const date=(v:string)=>new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:'Europe/Tallinn'}).format(new Date(v));
 const time=(v:string)=>new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Tallinn'}).format(new Date(v));
 const box='rounded-xl border bg-card p-4 md:p-5';
-function ChartImage({id,label,onChange}:{id:string;label:string;onChange:(id:string)=>void}){
+export function ChartImage({id,label,onChange}:{id:string;label:string;onChange:(id:string)=>void}){
  const [url,setUrl]=useState(''),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[expanded,setExpanded]=useState(false);
  useEffect(()=>{let active=true,u='';setUrl('');setMessage('');setLoading(Boolean(id));if(id)void getChart(id).then(b=>{if(b&&active){u=URL.createObjectURL(b);setUrl(u);}else if(active)setMessage('Image unavailable in this browser; import a backup or upload it again.');}).catch(()=>{if(active)setMessage('Could not load the image. Upload it again or import a backup.');}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;if(u)URL.revokeObjectURL(u);};},[id]);
  const upload=async(file:File|undefined)=>{if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5*1024*1024){setMessage('Choose PNG, JPG or WebP, up to 5 MB.');return;}setLoading(true);try{const key=await putChart(file);onChange(key);setMessage('Image saved in this browser.');}catch{setMessage('Could not save the image. Try again or export a backup.');}finally{setLoading(false);}};

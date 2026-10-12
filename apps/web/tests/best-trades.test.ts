@@ -1,0 +1,4 @@
+import {it,expect} from 'vitest';
+import {emptyCollection,newExample,readCollection} from '../src/lib/best-trades';
+it('preserves custom chart titles, three image references and archive state through backup',()=>{const c=emptyCollection(),e=newExample(c.categories[0]!);expect(e.chartTitles).toEqual(['','','']);e.images=['one','two','three'];e.chartTitles[1]='My setup';e.archived=true;c.examples.push(e);expect(readCollection(JSON.parse(JSON.stringify(c)))).toEqual(c);});
+it('rejects invalid or ambiguous collections instead of overwriting saved data',()=>{const c=emptyCollection();c.examples.push(newExample(c.categories[0]!));expect(()=>readCollection({...c,version:2})).toThrow();expect(()=>readCollection({...c,examples:[c.examples[0],c.examples[0]]})).toThrow();expect(()=>readCollection({...c,examples:[{...c.examples[0],images:['one']}]})).toThrow();});
