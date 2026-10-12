@@ -7,5 +7,5 @@ export async function GET(){
   const response=await download('https://nfs.faireconomy.media/ff_calendar_thisweek.json');
   const events=parseWeeklyEvents(await response.json(),asOf);
   return NextResponse.json({asOf,events,source,error:null});
- }catch{return NextResponse.json({asOf,events:[],source,error:'Kalendri laadimine ebaõnnestus. Proovi uuesti.'},{status:502});}
+ }catch{return NextResponse.json({asOf,events:[],source,error:'Could not load the calendar. Try again.'},{status:502});}
 }
