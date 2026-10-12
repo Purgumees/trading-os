@@ -14,6 +14,7 @@ import { MacroObservationTable } from "./MacroObservationTable";
 import { InternationalYields } from "./InternationalYields";
 import { countries, type Country } from "@/lib/international-macro";
 import { CentralBankWatch } from "./CentralBankWatch";
+import { PairThemes } from "./PairThemes";
 import { PairMacroConclusion } from "./PairMacroConclusion";
 const categories = [
   {
@@ -161,6 +162,7 @@ export function ForexPairComparison({ initialPair = "EURUSD" }: { initialPair?: 
           )}
         </div>
       )}
+      <PairThemes initialPair={pair} compact />
       {data && (
         <>
           <p className="mt-3 text-xs text-muted-foreground">

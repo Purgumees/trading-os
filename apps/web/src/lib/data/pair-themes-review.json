@@ -1,0 +1,222 @@
+{
+  "reviewedAt": "2026-10-12T06:58:24.258629Z",
+  "method": "Source-reviewed working narratives, not a claim that every trader shares this view. Numerical evidence refreshes separately.",
+  "evidence": [
+    {
+      "id": "usd",
+      "currency": "USD",
+      "publishedAt": "2026-10-12",
+      "url": "https://www.reuters.com/world/india/gold-gains-weaker-oil-dollar-us-inflation-data-focus-2026-10-12/",
+      "note": "October hike expectations have receded, while later tightening remains possible. This week’s US inflation releases can change that balance."
+    },
+    {
+      "id": "eur",
+      "currency": "EUR",
+      "publishedAt": "2026-10-07",
+      "url": "https://www.reuters.com/business/sterling-scales-16-month-highs-against-euro-french-fiscal-concerns-mount-2026-10-07/",
+      "note": "French fiscal concerns have pressured the euro. Whether the risk is already sufficiently priced is a hypothesis, not an observable fact."
+    },
+    {
+      "id": "gbp",
+      "currency": "GBP",
+      "publishedAt": "2026-10-08",
+      "url": "https://www.reuters.com/world/uk/sterling-edges-down-before-boes-bailey-speech-2026-10-08/",
+      "note": "BOE communication and tighter-policy expectations are in focus, alongside UK gilt and fiscal risks."
+    },
+    {
+      "id": "jpy",
+      "currency": "JPY",
+      "publishedAt": "2026-10-12",
+      "url": "https://www.reuters.com/world/china/global-markets-wrapup-1-2026-10-12/",
+      "note": "Intervention risk has restrained dollar gains against the yen. BOJ policy timing remains a separate driver."
+    },
+    {
+      "id": "aud",
+      "currency": "AUD",
+      "publishedAt": "2026-09-29",
+      "url": "https://www.rba.gov.au/media-releases/2026/mr-26-27.html",
+      "note": "The RBA raised its target to 4.60%, citing inflation risks despite slowing activity. Policy support can still be offset by global risk aversion."
+    },
+    {
+      "id": "cad",
+      "currency": "CAD",
+      "publishedAt": "2026-10-09",
+      "url": "https://www150.statcan.gc.ca/n1/daily-quotidien/261009/dq261009a-eng.htm",
+      "note": "September employment fell by 68,000 and unemployment rose to 6.5%. Monitor BOC repricing and whether oil offsets domestic weakness."
+    },
+    {
+      "id": "nzd",
+      "currency": "NZD",
+      "publishedAt": "2026-09-02",
+      "url": "https://www.rbnz.govt.nz/monetary-policy/about-monetary-policy/the-official-cash-rate",
+      "note": "The RBNZ balances returning inflation to target with growth and employment. The next official OCR review is October 28; the connected probability model may omit this meeting."
+    }
+  ],
+  "pairs": {
+    "EURUSD": {
+      "title": "Kas Prantsusmaa risk on piisavalt hinnastatud, et USD ootuste leevenemine saaks paari toetada?",
+      "story": "USA intressiootuste leevenemine ja euro enda riskisurve töötavad vastassuunas. Prantsusmaa probleemi täielik lahendus pole taastumise eeltingimus; tähtis on uute üllatuste ja hinnareaktsiooni muutus.",
+      "watch": [
+        "USA CPI/PPI ja Fedi hilisem intressitee",
+        "Prantsusmaa–Saksamaa 2Y ja 10Y riskivahed",
+        "Kas EURUSD lõpetab halbade uudiste järel uute põhjade hoidmise?"
+      ],
+      "up": "USA suhteline intressieelis väheneb, Prantsusmaa riskivahed stabiliseeruvad või kitsenevad ja EURUSD hoiab tõuse.",
+      "down": "USA inflatsioon taastab tõusuootused või Prantsusmaa risk süveneb ning EURUSD kinnitab langusega.",
+      "evidenceIds": [
+        "usd",
+        "eur"
+      ]
+    },
+    "GBPUSD": {
+      "title": "BOE karmistamise ootus versus Fedi paus ja Briti eelarverisk",
+      "story": "Jälgime, kas Briti rahapoliitika toetus peab USD ja riskimeeleolu survele vastu. Kõrgemad pikad gilt-tootlused üksi ei kinnita GBP tugevust.",
+      "watch": [
+        "BOE kõned ja Briti inflatsioon/tööturg",
+        "GBP–USD 2Y muutus ning USA CPI",
+        "Briti eelarve ja gilt-risk"
+      ],
+      "up": "BOE suhteline väljavaade tugevneb, gilt-risk ei süvene ja GBPUSD hoiab tõusu.",
+      "down": "Fedi ootused tugevnevad või Briti kasvu/elarve risk kaalub intressitoetuse üles.",
+      "evidenceIds": [
+        "gbp",
+        "usd"
+      ]
+    },
+    "USDJPY": {
+      "title": "USA intressieelis versus BOJ normaliseerumine ja sekkumisrisk",
+      "story": "Intressivahe võib USDJPY-d toetada, kuid BOJ karmistamine ja jeeni ostmise sekkumisrisk võivad seda muuta. Sekkumist ei tohi eeldada kindlal hinnatasemel.",
+      "watch": [
+        "USA–Jaapani 2Y vahe ja USA CPI",
+        "BOJ kõned, inflatsioon ja järgmine otsus",
+        "MOF ametlikud sekkumisteated; hinnareaktsioon"
+      ],
+      "up": "USA intressieelis laieneb ning USDJPY hoiab tõuse ilma jeeni tugevnemise kinnituseta.",
+      "down": "Intressivahe kitseneb, BOJ väljavaade karmistub või sekkumine/riskipositsioonide sulgemine tugevdab jeeni.",
+      "evidenceIds": [
+        "usd",
+        "jpy"
+      ]
+    },
+    "USDCAD": {
+      "title": "Kanada tööturu nõrkus versus nafta toetus CAD-le",
+      "story": "Kanada tööjõuturu nõrkus võib muuta BOC ootusi. Samal ajal võib nafta ja üldine USD suund tööturu mõju tasakaalustada; nafta tõus ei garanteeri CAD tõusu.",
+      "watch": [
+        "BOC ootused ja Kanada inflatsioon",
+        "Nafta muutus koos CAD hinnareaktsiooniga",
+        "USA–Kanada 2Y vahe ja USA CPI"
+      ],
+      "up": "Kanada nõrkus vähendab suhtelist intressitoetust ning USDCAD kinnitab tõusu.",
+      "down": "USD leevenemine või CAD-d toetav nafta/poliitika areng paneb USDCAD langema ja langust hoidma.",
+      "evidenceIds": [
+        "cad",
+        "usd"
+      ]
+    },
+    "AUDUSD": {
+      "title": "RBA inflatsioonivõitlus versus USD ja globaalne riskimeeleolu",
+      "story": "Austraalia karmim poliitika võib AUD-d toetada, kuid Hiina nõudlus ja riskikartus võivad selle mõju üle kaaluda. Kontrollime, milline pool hinnas domineerib.",
+      "watch": [
+        "Austraalia inflatsioon ja tööturg",
+        "Hiina kasvu/uudiste mõju ning riskimeeleolu",
+        "AUD–USD 2Y muutus ja USA CPI"
+      ],
+      "up": "RBA suhteline toetus püsib, riskimeeleolu paraneb ja AUDUSD hoiab tõusu.",
+      "down": "Riskikartus või nõrgem Hiina/Austraalia väljavaade survestab AUD-d, või Fedi ootused karmistuvad.",
+      "evidenceIds": [
+        "aud",
+        "usd"
+      ]
+    },
+    "NZDUSD": {
+      "title": "RBNZ kasvu–inflatsiooni tasakaal versus Fedi tee",
+      "story": "NZD puhul kontrollime, kas nõrgem kasv/tööturg vähendab intressitoetust rohkem kui USD väljavaate leevenemine. Hilise koosoleku hinnangut ei tohi esitada järgmise otsuse tõenäosusena.",
+      "watch": [
+        "NZ inflatsioon, GDP ja tööturg",
+        "RBNZ ametlik järgmine otsus ning tegelik mudeli katvus",
+        "NZD–USD 2Y muutus ja riskimeeleolu"
+      ],
+      "up": "NZ väljavaade paraneb või USD leevenemine kaalub NZD nõrkuse üle ning paar kinnitab tõusuga.",
+      "down": "NZ intressitoetus nõrgeneb suhteliselt edasi ning NZDUSD kinnitab langusega.",
+      "evidenceIds": [
+        "nzd",
+        "usd"
+      ]
+    },
+    "GBPJPY": {
+      "title": "BOE poliitikatoetus versus BOJ ja carry-positsioonide risk",
+      "story": "Jälgime Briti ja Jaapani poliitika lahknemist. Riski järsk muutus võib carry-positsioonide sulgemise kaudu jeeni tugevdada isegi siis, kui Briti intressitase on kõrgem.",
+      "watch": [
+        "GBP–JPY 2Y vahe",
+        "BOE ja BOJ suhtluse muutus",
+        "Riskimeeleolu, Briti eelarve ja sekkumisrisk"
+      ],
+      "up": "Briti suhteline toetus suureneb ja GBPJPY hoiab tõuse.",
+      "down": "BOJ väljavaade või riskipositsioonide sulgemine toetab jeeni; Briti risk lisab survet.",
+      "evidenceIds": [
+        "gbp",
+        "jpy"
+      ]
+    },
+    "EURJPY": {
+      "title": "Euro fiskalne surve versus BOJ ja jeeni riskid",
+      "story": "Siin ei ole USA andmed otsene valuutapaarisisene mootor. Võrdleme euro fiskalset survet jeeni poliitika ja riskimeeleolu kanaliga.",
+      "watch": [
+        "Prantsusmaa–Saksamaa riskivahed",
+        "EUR–JPY 2Y muutus ja BOJ",
+        "Kas euro paranemine avaldub ka väljaspool EURUSD-d?"
+      ],
+      "up": "Euro riskisurve leeveneb, suhteline intressitoetus paraneb ja EURJPY hoiab tõusu.",
+      "down": "Euro risk süveneb või BOJ/sekkumine tugevdab jeeni ning EURJPY kinnitab langusega.",
+      "evidenceIds": [
+        "eur",
+        "jpy"
+      ]
+    },
+    "AUDJPY": {
+      "title": "RBA toetus ja riskimeeleolu versus BOJ/carry sulgemine",
+      "story": "AUDJPY puhul kontrollime, kas riskimeeleolu kaalub intressivahe üle. Seda paari ei tohiks kasutada mehaanilise risk-on/risk-off mõõdikuna.",
+      "watch": [
+        "AUD–JPY 2Y muutus ja RBA/BOJ",
+        "Hiina ning toormete mõju AUD-le",
+        "Sekkumisrisk ja carry-positsioonide sulgemine"
+      ],
+      "up": "AUD suhteline toetus ja riskimeeleolu paranevad koos paari tõusuga.",
+      "down": "Riskikartus, BOJ karmistamine või sekkumine tugevdab jeeni; paar hoiab langust.",
+      "evidenceIds": [
+        "aud",
+        "jpy"
+      ]
+    },
+    "GBPAUD": {
+      "title": "Briti ja Austraalia karmistamise erinevus, mitte USD-lugu",
+      "story": "Mõlemal pool tuleb hinnata inflatsiooni ja kasvukulu. Lisaks võivad Briti eelarverisk ning Hiina/Austraalia nõudlus muuta suhtelist tugevust.",
+      "watch": [
+        "GBP–AUD 2Y vahe ja BOE/RBA ootused",
+        "Briti eelarve ning Austraalia tööturg",
+        "Hiina nõudlus ja paari hinnareaktsioon"
+      ],
+      "up": "Briti väljavaade paraneb Austraalia suhtes ning GBPAUD kinnitab tõusuga.",
+      "down": "RBA/AUD toetus suureneb Briti suhtes või Briti eelarverisk süveneb.",
+      "evidenceIds": [
+        "gbp",
+        "aud"
+      ]
+    },
+    "AUDNZD": {
+      "title": "Kas RBA ja RBNZ poliitika/kasvu lahknemine püsib?",
+      "story": "Austraalia ja NZ suhteline väljavaade on olulisem kui üldine USD-lugu. RBA karmistamine üksi ei tõesta uut tõusupotentsiaali: kontrollime, mis sellest on juba hinnas.",
+      "watch": [
+        "AUD–NZD 2Y vahe",
+        "Mõlema riigi inflatsioon, kasv ja tööturg",
+        "RBNZ otsuse tegelik kuupäev ja paari reaktsioon"
+      ],
+      "up": "Austraalia suhteline poliitika/kasvutoetus paraneb ning AUDNZD hoiab tõusu.",
+      "down": "NZ väljavaade paraneb suhteliselt või Austraalia toetus väheneb; paar kinnitab langusega.",
+      "evidenceIds": [
+        "aud",
+        "nzd"
+      ]
+    }
+  }
+}
