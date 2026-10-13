@@ -1,0 +1,5 @@
+import {put} from '@vercel/blob';
+import {readMt5} from '@/lib/mt5-sync';
+import {verifyDevice,syncResponse} from '@/server/mt5-auth';
+export const runtime='nodejs';
+export async function POST(request:Request){const auth=verifyDevice(request);if(!auth)return syncResponse({error:'Invalid or expired account token'},401);try{const length=Number(request.headers.get('content-length')||0);if(length>2000000)return syncResponse({error:'Snapshot too large'},413);const raw=await request.text();if(Buffer.byteLength(raw)>2000000)return syncResponse({error:'Snapshot too large'},413);const snapshot=readMt5(JSON.parse(raw));if(snapshot.account!==auth.account)return syncResponse({error:'Token belongs to another account'},403);const receivedAt=new Date().toISOString();await put(`mt5/${auth.namespace}/${auth.account}/latest.json`,JSON.stringify({...snapshot,receivedAt}),{access:'private',addRandomSuffix:false,allowOverwrite:true,contentType:'application/json'});return syncResponse({receivedAt,deals:snapshot.deals.length});}catch{return syncResponse({error:'Snapshot rejected or private storage unavailable. Check account timezone and EA log.'},400);}}
