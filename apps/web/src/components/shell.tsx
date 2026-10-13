@@ -36,6 +36,8 @@ const NAV = [
   { href: "/", label: "Macro dashboard", icon: LayoutDashboard },
   { href: "/forecast", label: "Weekly Forecast", icon: NotebookPen },
   { href: "/before-trade", label: "Before Trade", icon: ListChecks },
+  { href: "/trade-journal", label: "Trading Journal", icon: NotebookPen },
+  { href: "/trade-review", label: "Trade Review", icon: BarChart3 },
   { href: "/swing-trades", label: "Swing Trades", icon: BookmarkPlus },
   { href: "/intraday-trades", label: "Intraday Trades", icon: CalendarDays },
   { href: "/trade-dashboard", label: "Trade dashboard", icon: BarChart3 },
