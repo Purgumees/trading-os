@@ -37,7 +37,7 @@ const NAV = [
   { href: "/forecast", label: "Weekly Forecast", icon: NotebookPen },
   { href: "/weekly-development", label: "Weekly Development", icon: BookText },
   { href: "/before-trade", label: "Before / After Trade", icon: ListChecks },
-  { href: "/trade-journal", label: "Trading Journal", icon: NotebookPen },
+  { href: "/trade-journal", label: "Trading Journal · Demo", icon: NotebookPen },
   { href: "/trader-development", label: "Trader Development", icon: BookOpen },
   { href: "/trade-review", label: "Trade Review", icon: BarChart3 },
   { href: "/swing-trades", label: "Swing Trades*", icon: BookmarkPlus },
