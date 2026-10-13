@@ -42,21 +42,11 @@ const NAV = [
   { href: "/trade-review", label: "Trade Review", icon: BarChart3 },
   { href: "/swing-trades", label: "Swing Trades*", icon: BookmarkPlus },
   { href: "/intraday-trades", label: "Intraday Trades*", icon: CalendarDays },
-  { href: "/trade-dashboard", label: "Trade dashboard", icon: BarChart3 },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/journal", label: "Daily journal", icon: NotebookPen },
-  { href: "/trades", label: "Trades", icon: ListOrdered },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/prop-firms", label: "Prop firms", icon: Landmark },
-  { href: "/notebook", label: "Notebook", icon: BookText },
-  { href: "/playbooks", label: "Playbooks", icon: BookOpen },
-  { href: "/progress", label: "Progress", icon: ListChecks },
-  { href: "/missed", label: "Missed trades", icon: BookmarkPlus },
+  { href: "/missed", label: "Missed Trades", icon: BookmarkPlus },
 ] as const;
 
 const NAV_SETUP = [
-  { href: "/import", label: "Import", icon: Import },
-  { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -166,7 +156,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {NAV.map(({ href, label, icon }) => (
         <NavLink
           key={href}
-          href={href === "/prop-firms" ? href : filterQuery.size ? `${href}?${filterQuery}` : href}
+          href={filterQuery.size ? `${href}?${filterQuery}` : href}
           label={label}
           icon={icon}
           collapsed={collapsed}
