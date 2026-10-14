@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {ExecutionEditor} from './ExecutionEditor';
-import {JOURNAL_ACCOUNTS_KEY,readJournalAccounts,type JournalAccount} from '@/lib/account-journal';
+import {JOURNAL_ACCOUNTS_KEY,readJournalAccounts,resultR,numeric,type JournalAccount} from '@/lib/account-journal';
 import {ChartImage} from './WeeklyForecast';
 import {ForecastCatalysts} from './ForecastCatalysts';
 import {BEFORE_TRADE_KEY,newTradePlan,readTradePlans,riskSummary,readiness,type TradePlan,type TradePlans} from '@/lib/before-trade';
@@ -39,6 +39,13 @@ export function BeforeTrade(){
 
  {current&&<section className="space-y-5 rounded-xl border bg-card p-4 md:p-6">
  <div className="flex flex-wrap items-center gap-3 text-sm"><span className="rounded bg-muted px-3 py-2 font-mono font-semibold">Trade ID: {current.mt5Source?current.mt5Source.split('|').at(-1):current.id.slice(0,8).toUpperCase()}</span><Link className="underline" href={`/trade-journal?plan=${encodeURIComponent(current.id)}`}>View P&L and R in Trading Journal →</Link></div>
+
+ <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+ <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Initial risk</p><p className="mt-1 font-semibold">{numeric(current.journal.initialRisk)!==null&&numeric(current.journal.initialRisk)!>0?`${numeric(current.journal.initialRisk)!.toFixed(2)} ${journalAccounts.find(a=>a.id===current.journal.accountId)?.currency||''}`:'Not recorded'}</p></div>
+ <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Planned RR</p><p className="mt-1 font-semibold">{riskSummary(current).rr!==null?`1:${riskSummary(current).rr!.toFixed(2)}`:'Not recorded'}</p></div>
+ <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Actual R</p><p className="mt-1 font-semibold">{resultR(current)!==null?`${resultR(current)!.toFixed(2)}R`:'Not available'}</p></div>
+ <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Profit / Loss</p><p className="mt-1 font-semibold">{current.journal.state==='closed'&&numeric(current.journal.netPnl)!==null?`${numeric(current.journal.netPnl)!.toFixed(2)} ${journalAccounts.find(a=>a.id===current.journal.accountId)?.currency||''}`:'Not closed'}</p></div>
+ </div>
  <h2 className="text-xl font-semibold">{current.mt5Source?'MT5 Trade Review':'Trade Review'} · {current.pair} {current.direction.toUpperCase()}</h2>
  <p className="text-sm text-muted-foreground">Only TradingView charts and your reason for taking the trade are entered manually. MT5 execution details appear when available.</p>
  <div className="grid gap-4 md:grid-cols-2">
