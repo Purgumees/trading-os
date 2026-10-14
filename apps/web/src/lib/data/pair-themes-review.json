@@ -1,34 +1,34 @@
 {
-  "reviewedAt": "2026-10-13T03:31:38Z",
+  "reviewedAt": "2026-10-14T04:29:00Z",
   "method": "Source-reviewed working narratives, not a claim that every trader shares this view. Numerical evidence refreshes separately.",
   "evidence": [
     {
       "id": "usd",
       "currency": "USD",
-      "publishedAt": "2026-10-13",
-      "url": "https://www.reuters.com/world/africa/dollar-holds-near-18-month-high-geopolitical-risks-rise-2026-10-13/",
-      "note": "The dollar held near an 18-month high as higher US rates and yields, energy costs and geopolitical risk supported it. Upcoming US inflation data can still change the policy path."
+      "publishedAt": "2026-10-14",
+      "url": "https://www.reuters.com/world/asia-pacific/dollar-languishes-focus-turns-cpi-fed-speakers-2026-10-14/",
+      "note": "The dollar pulled back from its 18-month high as oil and US yields eased ahead of September CPI. A stronger core CPI could revive the hike narrative; the pre-release pullback is not proof of a lasting reversal."
     },
     {
       "id": "eur",
       "currency": "EUR",
-      "publishedAt": "2026-10-07",
-      "url": "https://www.reuters.com/business/sterling-scales-16-month-highs-against-euro-french-fiscal-concerns-mount-2026-10-07/",
-      "note": "French fiscal concerns have pressured the euro. Whether the risk is already sufficiently priced is a hypothesis, not an observable fact."
+      "publishedAt": "2026-10-14",
+      "url": "https://www.reuters.com/world/asia-pacific/dollar-languishes-focus-turns-cpi-fed-speakers-2026-10-14/",
+      "note": "The euro edged higher as the dollar eased, but French fiscal risk remains unresolved. Whether enough risk is priced in remains a hypothesis."
     },
     {
       "id": "gbp",
       "currency": "GBP",
-      "publishedAt": "2026-10-12",
-      "url": "https://www.reuters.com/business/pound-treads-water-dollar-holds-firm-2026-10-12/",
-      "note": "Sterling was range-bound against a firm dollar. Higher energy costs keep BOE inflation risk in focus, while the UK Budget remains a separate downside risk."
+      "publishedAt": "2026-10-13",
+      "url": "https://www.reuters.com/world/uk/sterling-holds-near-16-month-high-vs-euro-budget-boe-focus-2026-10-13/",
+      "note": "Sterling held near a 16-month high versus the euro as UK fiscal concern eased and BOE tightening expectations supported it. The October 28 Budget remains a downside catalyst."
     },
     {
       "id": "jpy",
       "currency": "JPY",
-      "publishedAt": "2026-10-13",
-      "url": "https://www.reuters.com/world/africa/dollar-holds-near-18-month-high-geopolitical-risks-rise-2026-10-13/",
-      "note": "The yen gained slightly after softer-than-expected Japanese wholesale-price data. BOJ timing and official intervention risk remain separate drivers."
+      "publishedAt": "2026-10-14",
+      "url": "https://www.reuters.com/world/asia-pacific/dollar-languishes-focus-turns-cpi-fed-speakers-2026-10-14/",
+      "note": "The yen was broadly stable as the dollar eased. BOJ timing, the US-Japan yield gap and official intervention risk remain separate drivers."
     },
     {
       "id": "aud",
@@ -54,113 +54,113 @@
   ],
   "pairs": {
     "EURUSD": {
-      "title": "Kas USD turvanõudlus ja Euroopa võlarisk püsivad tugevamad kui USA inflatsiooniüllatus?",
-      "story": "Dollar püsib 18 kuu tipu lähedal: seda toetavad kõrgemad USA intressid/tootlused, energiašokk ja geopoliitiline turvanõudlus. Eurot piirab samal ajal Prantsusmaa ning laiem Euroopa võlarisk; USA inflatsioon võib siiski intressiloo kiiresti ümber hinnata.",
+      "title": "Kas USA CPI taastab USD tõusu või süveneb tipu järel alanud taandumine?",
+      "story": "Dollar taandus 18 kuu tipu juurest, kui nafta ja USA tootlused leevenesid enne tänast USA CPI-d. Euro sai sellest veidi hingamisruumi, kuid Prantsusmaa ja laiem Euroopa võlarisk ei ole kadunud; CPI võib suhtelise intressiloo kiiresti uuesti USD kasuks pöörata.",
       "watch": [
-        "USA CPI/PPI, 2Y/10Y tootlused ja Fedi hilisem intressitee",
-        "Nafta/energia ning turvanõudluse mõju USD-le",
+        "USA CPI/core CPI, 2Y/10Y tootluste reaktsioon ja Fedi kõned",
+        "Nafta ning turvanõudluse püsimine või taandumine",
         "Prantsusmaa–Saksamaa 2Y ja 10Y riskivahed; automaatne võrdlus pole ühendatud"
       ],
-      "up": "USA inflatsioon/tootlused leevenevad, turvanõudlus taandub ning Euroopa riskivahed stabiliseeruvad; EURUSD kinnitab tõusuga.",
-      "down": "Kõrgemad USA tootlused või energia/geopoliitiline risk toetavad USD-d ning Euroopa võlarisk süveneb.",
+      "up": "USA inflatsioon/tootlused leevenevad edasi, turvanõudlus taandub ning Euroopa riskivahed stabiliseeruvad; EURUSD hoiab tõusu.",
+      "down": "Tugev core CPI taastab USA tõusuootuse või Euroopa võlarisk süveneb ja EURUSD pöördub alla.",
       "evidenceIds": [
         "usd",
         "eur"
       ]
     },
     "GBPUSD": {
-      "title": "BOE inflatsioonirisk versus 18 kuu tipu lähedal püsiv USD",
-      "story": "Nafta ja geopoliitiline risk toetavad dollarit, samal ajal hoiavad kõrgemad energiakulud BOE inflatsiooniriski elus. GBP püsis vahemikus; kõrge intressiootus ei kõrvalda Briti eelarveriski.",
+      "title": "BOE karmim ootus toetab GBP-d, kuid USA CPI võib USD suuna kiiresti ümber hinnata",
+      "story": "Sterling püsib euro vastu 16 kuu tipu lähedal, sest BOE karmim ootus ja leevenenud Briti eelarvemure toetavad seda. USD taandus tipust enne CPI-d; 28. oktoobri Briti eelarve jääb GBP eraldi langusriskiks.",
       "watch": [
-        "BOE kõned, Briti inflatsioon/tööturg ja 5. novembri otsuse ümberhindlus",
-        "USA CPI ning USA 2Y/10Y tootlused",
-        "Nafta, riskimeeleolu ja Briti eelarve/gilt-risk"
+        "USA CPI/core CPI ja USA 2Y/10Y tootlused",
+        "BOE kõned, Briti kasv ja 5. novembri otsuse ümberhindlus",
+        "28. oktoobri Briti eelarve ning gilt-turu reaktsioon"
       ],
-      "up": "USA tootlused ja turvanõudlus taanduvad, BOE suhteline tugi püsib ning GBPUSD hoiab tõusu.",
-      "down": "USD turva- ja tootlusetugi tugevneb või Briti kasvu/eelarverisk kaalub BOE toe üles.",
+      "up": "USA tootlused leevenevad, BOE suhteline tugi püsib ja GBPUSD hoiab tõusu.",
+      "down": "Tugev USA CPI taastab USD tootlusetoe või Briti eelarverisk süveneb.",
       "evidenceIds": [
         "gbp",
         "usd"
       ]
     },
     "USDJPY": {
-      "title": "USD tootluse- ja turvatugi versus JPY hinnasurve leevenemine ning sekkumisrisk",
-      "story": "USD püsib kõrgemate intresside ja geopoliitilise riski toel tugev, kuid USDJPY taandus veidi pärast Jaapani oodatust nõrgemat hulgihinna näitu. See ei kinnita üksi BOJ pööret; intressivahe ja sekkumisrisk jäävad võtmeteks.",
+      "title": "USD tipu-järgne taandumine versus JPY intressivahe ja sekkumisrisk",
+      "story": "Dollar nõrgenes veidi enne USA CPI-d ning jeen püsis üldjoontes stabiilne. See ei kinnita USD trendipööret ega BOJ suunamuutust; paari juhivad endiselt USA–Jaapani intressivahe, BOJ ajastus ja ametlik sekkumisrisk.",
       "watch": [
-        "USA–Jaapani 2Y vahe, USA CPI ja USA tootlused",
-        "Jaapani hulgihinnad, BOJ kõned ja järgmine otsus",
+        "USA CPI ja USA–Jaapani 2Y vahe",
+        "BOJ kõned, Jaapani hinnad ning 14. oktoobri rahapakkumise andmed",
         "MOF ametlikud sekkumisteated; sekkumist ei eeldata kindlal tasemel"
       ],
-      "up": "USA intressi- ja turvatugi laieneb ning USDJPY hoiab tõuse ilma BOJ või sekkumise kinnituseta.",
-      "down": "USA tootlused langevad, BOJ väljavaade karmistub või sekkumine/riskipositsioonide sulgemine tugevdab jeeni.",
+      "up": "Tugev USA CPI taastab tootluseelise ning USDJPY hoiab tõusu ilma BOJ või sekkumise kinnituseta.",
+      "down": "USA tootlused langevad edasi, BOJ väljavaade karmistub või sekkumine/riskipositsioonide sulgemine tugevdab jeeni.",
       "evidenceIds": [
         "usd",
         "jpy"
       ]
     },
     "USDCAD": {
-      "title": "USD turva- ja tootlusetugi versus nafta võimalik CAD-tugi",
-      "story": "Kanada tööturu nõrkus ja tugev USD soosivad USDCAD tõusuriski, kuid kõrge nafta võib CAD-d osaliselt toetada. Nafta tõus ei garanteeri CAD tugevust, eriti riskikartuse korral.",
+      "title": "Kanada tööturu nõrkus versus USD tipu-järgne taandumine ja nafta",
+      "story": "Kanada tööturu nõrkus toetab endiselt USDCAD tõusuriski, kuid USD taandus tipust ja nafta leevenes enne USA CPI-d. CAD suund sõltub sellest, kas kodumaine nõrkus kaalub energia ja USD korrektsiooni üle.",
       "watch": [
         "BOC ootused ja Kanada inflatsioon pärast nõrka tööturgu",
         "Nafta muutus koos CAD tegeliku hinnareaktsiooniga",
-        "USA–Kanada 2Y vahe, USA CPI ja globaalne turvanõudlus"
+        "USA CPI ning USA–Kanada 2Y vahe"
       ],
-      "up": "Kanada nõrkus vähendab suhtelist intressitoetust ning USDCAD kinnitab tõusu.",
-      "down": "USD leevenemine või CAD-d toetav nafta/poliitika areng paneb USDCAD langema ja langust hoidma.",
+      "up": "Tugev USA CPI või Kanada nõrkus suurendab suhtelist intressivahet ja USDCAD hoiab tõusu.",
+      "down": "USD tootlusetugi leeveneb või CAD-d toetav nafta/poliitika areng viib paari alla.",
       "evidenceIds": [
         "cad",
         "usd"
       ]
     },
     "AUDUSD": {
-      "title": "RBA inflatsioonitugi versus tugev USD ja risk-off surve",
-      "story": "RBA karmim poliitika toetab AUD-d fundamentaalselt, kuid tugev USD, kõrgemad energiakulud ja aktsiaturu riskikartus suruvad tsüklilisi valuutasid. AUD nõrgenes varahommikul veidi; see pole veel eraldiseisev trendikinnitus.",
+      "title": "RBA inflatsioonitugi ja USD taandumine versus jätkuv risk-off oht",
+      "story": "AUD sai USD tipu-järgsest taandumisest veidi tuge, samal ajal püsib RBA karmim poliitika fundamentaalse toena. Kõrge energia ja globaalne riskikartus võivad tsüklilise AUD taastumise siiski kiiresti katkestada.",
       "watch": [
-        "Austraalia inflatsioon/tööturg ja RBA järgmise tõusu risk",
-        "Hiina ning globaalse aktsiaturu riskimeeleolu",
-        "AUD–USD 2Y muutus, USA CPI ja USA tootlused"
+        "Austraalia tööturg ning järgmine CPI/RBA ümberhindlus",
+        "Hiina ja globaalne aktsiaturu riskimeeleolu",
+        "USA CPI, AUD–USD 2Y muutus ja USA tootlused"
       ],
       "up": "USA tootlused/turvanõudlus taanduvad, RBA suhteline tugi püsib ja AUDUSD hoiab tõusu.",
-      "down": "Riskikartus või tugev USD kaalub RBA toe üles ning AUDUSD kinnitab langusega.",
+      "down": "Tugev USA CPI või riskikartus kaalub RBA toe üles ning AUDUSD pöördub alla.",
       "evidenceIds": [
         "aud",
         "usd"
       ]
     },
     "NZDUSD": {
-      "title": "NZ kasvu–inflatsiooni tasakaal versus tugev USD ja risk-off",
-      "story": "NZD-d survestavad tugev USD ja riskikartus, samal ajal tuleb RBNZ väljavaadet hinnata ametliku 28. oktoobri otsuse, mitte mittetäieliku tõenäosusmudeli järgi.",
+      "title": "USD taandumine annab NZD-le hingamisruumi, kuid RBNZ ja kasvurisk jäävad võtmeteks",
+      "story": "NZD tõusis veidi koos USD nõrgenemisega, kuid see ei kinnita püsivat trendipööret. RBNZ väljavaadet tuleb hinnata 28. oktoobri ametliku otsuse ning NZ kasvu- ja inflatsiooniandmete, mitte mittetäieliku tõenäosusmudeli järgi.",
       "watch": [
         "NZ inflatsioon, GDP ja tööturg",
         "RBNZ 28. oktoobri ametlik otsus ning tegelik mudeli katvus",
-        "NZD–USD 2Y muutus, USA CPI ja globaalne riskimeeleolu"
+        "USA CPI, NZD–USD 2Y muutus ja globaalne riskimeeleolu"
       ],
-      "up": "USD turvanõudlus leeveneb või NZ väljavaade paraneb ning NZDUSD kinnitab tõusuga.",
-      "down": "Tugev USD/risk-off ja nõrgem NZ intressitugi jätkuvad ning paar hoiab langust.",
+      "up": "USD tootluse- ja turvanõudlus leeveneb või NZ väljavaade paraneb ning NZDUSD hoiab tõusu.",
+      "down": "Tugev USA CPI/risk-off või nõrgem NZ intressitugi taastab langussurve.",
       "evidenceIds": [
         "nzd",
         "usd"
       ]
     },
     "GBPJPY": {
-      "title": "BOE energiainflatsiooni risk versus JPY hulgihinna leevenemine ja carry-risk",
-      "story": "GBP intressitugi püsib, kuid kõrgem energia võib korraga tõsta BOE inflatsiooniriski ja halvendada riskimeeleolu. JPY sai nõrgemast hulgihinna näidust veidi tuge; carry sulgemine ja sekkumisrisk võivad intressivahe üle kaaluda.",
+      "title": "GBP suhteline tugevus versus JPY intressivahe, carry- ja sekkumisrisk",
+      "story": "GBP püsib euro vastu tugev BOE ootuste ja leevenenud eelarvemure toel, samal ajal oli JPY üldjoontes stabiilne. Kõrge energia, carry-positsioonide sulgemine või sekkumisrisk võivad intressivahe toe siiski üle kaaluda.",
       "watch": [
         "GBP–JPY 2Y vahe ning BOE/BOJ suhtlus",
-        "Nafta, aktsiaturu riskimeeleolu ja carry-positsioonide sulgemine",
+        "28. oktoobri Briti eelarve, nafta ja globaalne riskimeeleolu",
         "Jaapani hinnanäidud ja ametlik sekkumisrisk"
       ],
-      "up": "Briti suhteline toetus suureneb ja GBPJPY hoiab tõuse.",
-      "down": "BOJ väljavaade või riskipositsioonide sulgemine toetab jeeni; Briti risk lisab survet.",
+      "up": "BOE suhteline tugi püsib, riskimeeleolu paraneb ja GBPJPY hoiab tõusu.",
+      "down": "BOJ väljavaade, sekkumine või carry-positsioonide sulgemine tugevdab jeeni; Briti eelarverisk lisab survet.",
       "evidenceIds": [
         "gbp",
         "jpy"
       ]
     },
     "EURJPY": {
-      "title": "Euro võlarisk versus JPY hinnasurve leevenemine ja sekkumisrisk",
-      "story": "Eurot piirab Prantsusmaa/laiem võlarisk, JPY sai oodatust nõrgemast hulgihinna näidust veidi tuge. Paari põhiküsimus on, kas Euroopa risk süveneb kiiremini kui BOJ ootused leevenevad.",
+      "title": "Euro ajutine USD-leevendus versus JPY intressivahe ja Euroopa võlarisk",
+      "story": "Euro tõusis veidi koos USD taandumisega, kuid Prantsusmaa ja laiem võlarisk ei ole lahenenud. JPY oli stabiilne; paari suunda määrab Euroopa riskivahe ja BOJ/intressivahe areng, mitte ühe päeva USD liikumine.",
       "watch": [
         "Prantsusmaa–Saksamaa riskivahed; automaatne võrdlus pole ühendatud",
         "EUR–JPY 2Y muutus, BOJ ja Jaapani hinnanäidud",
@@ -174,29 +174,29 @@
       ]
     },
     "AUDJPY": {
-      "title": "RBA tugi versus risk-off, JPY leevenenud hinnasurve ja carry sulgemine",
-      "story": "RBA karmim suund toetab AUD-d, kuid aktsiaturu riskikartus ja carry-positsioonide sulgemine võivad JPY-d suhteliselt tugevdada. Jaapani pehmem hulgihinna näit üksi ei kinnita BOJ pööret.",
+      "title": "RBA tugi versus JPY carry- ja sekkumisrisk pärast AUD väikest taastumist",
+      "story": "AUD sai USD nõrgenemisest veidi tuge, RBA karmim suund toetab seda suhteliselt. JPY püsis stabiilne; riskikartus, carry-positsioonide sulgemine või BOJ/sekkumise areng võib siiski AUDJPY survet taastada.",
       "watch": [
         "AUD–JPY 2Y vahe ja RBA/BOJ",
         "Hiina, aktsiaturud ja toormete mõju AUD-le",
         "Jaapani hinnanäidud, sekkumisrisk ja carry-positsioonide sulgemine"
       ],
-      "up": "AUD suhteline toetus ja riskimeeleolu paranevad koos paari tõusuga.",
-      "down": "Riskikartus, BOJ karmistamine või sekkumine tugevdab jeeni; paar hoiab langust.",
+      "up": "AUD suhteline poliitikatugi ja riskimeeleolu paranevad koos paari tõusuga.",
+      "down": "Riskikartus, BOJ karmistamine või sekkumine tugevdab jeeni; paar pöördub alla.",
       "evidenceIds": [
         "aud",
         "jpy"
       ]
     },
     "GBPAUD": {
-      "title": "BOE ja RBA inflatsioonirisk, kuid risk-off võib AUD-d rohkem survestada",
-      "story": "Mõlemad keskpangad seisavad silmitsi inflatsiooniriskiga. Globaalse riskikartuse korral võib AUD olla haavatavam, samal ajal jäävad GBP-le Briti eelarve- ja gilt-riskid.",
+      "title": "GBP suhteline tugi versus RBA inflatsioonirisk ja Austraalia tööturg",
+      "story": "BOE karmim ootus ning leevenenud Briti eelarvemure toetavad GBP-d, samal ajal püsib RBA inflatsioonisõnum AUD toena. Paaris on järgmine oluline võrdlus Briti eelarverisk versus Austraalia tööturu ja RBA reaktsioon.",
       "watch": [
         "GBP–AUD 2Y vahe ning BOE/RBA ootused",
-        "Briti eelarve/gilt-risk ja Austraalia tööturg",
+        "28. oktoobri Briti eelarve/gilt-risk ja Austraalia tööturg",
         "Hiina ning globaalne aktsiaturu riskimeeleolu"
       ],
-      "up": "Briti väljavaade paraneb Austraalia suhtes ning GBPAUD kinnitab tõusuga.",
+      "up": "Briti suhteline intressi- ja eelarveväljavaade püsib Austraalia suhtes tugevam ning GBPAUD hoiab tõusu.",
       "down": "RBA/AUD toetus suureneb Briti suhtes või Briti eelarverisk süveneb.",
       "evidenceIds": [
         "gbp",
@@ -204,11 +204,11 @@
       ]
     },
     "AUDNZD": {
-      "title": "RBA–RBNZ lahknemine püsib, kuid mõlemat piirab globaalne risk-off",
-      "story": "RBA karmim inflatsioonisõnum toetab AUD-d suhteliselt, kuid AUD ja NZD nõrgenesid mõlemad tugeva USD/riskikartuse taustal. Paaris jääb määravaks kahe riigi enda intressi- ja kasvulugu, mitte USD liikumine.",
+      "title": "RBA–RBNZ lahknemine püsib; USD taandumine tõstis mõlemat vaid veidi",
+      "story": "AUD ja NZD said mõlemad USD nõrgenemisest veidi tuge, mistõttu paaris jääb määravaks kahe riigi enda intressi- ja kasvulugu. RBA karmim inflatsioonisõnum toetab AUD-d suhteliselt, RBNZ järgmine ametlik otsus on 28. oktoobril.",
       "watch": [
         "AUD–NZD 2Y vahe",
-        "Mõlema riigi inflatsioon, kasv ja tööturg",
+        "Austraalia tööturg ning mõlema riigi inflatsioon ja kasv",
         "RBNZ 28. oktoobri otsus ning RBA järgmise tõusu risk"
       ],
       "up": "Austraalia suhteline poliitika/kasvutoetus paraneb ning AUDNZD hoiab tõusu.",
