@@ -38,6 +38,7 @@ export function BeforeTrade(){
  </div></section>
 
  {current&&<section className="space-y-5 rounded-xl border bg-card p-4 md:p-6">
+ <div className="flex flex-wrap items-center gap-3 text-sm"><span className="rounded bg-muted px-3 py-2 font-mono font-semibold">Trade ID: {current.mt5Source?current.mt5Source.split('|').at(-1):current.id.slice(0,8).toUpperCase()}</span><Link className="underline" href={`/trade-journal?plan=${encodeURIComponent(current.id)}`}>View P&L and R in Trading Journal →</Link></div>
  <h2 className="text-xl font-semibold">{current.mt5Source?'MT5 Trade Review':'Trade Review'} · {current.pair} {current.direction.toUpperCase()}</h2>
  <p className="text-sm text-muted-foreground">Only TradingView charts and your reason for taking the trade are entered manually. MT5 execution details appear when available.</p>
  <div className="grid gap-4 md:grid-cols-2">
