@@ -23,6 +23,7 @@ import { QuarterlyGrowthHistory } from "@/components/QuarterlyGrowthHistory";
 import { quarterlyGrowthHistory } from "@/lib/quarterly-growth-history";
 import { RatesRegimeGuide } from "@/components/RatesRegimeGuide";
 import { TreasuryPanel } from "@/components/TreasuryPanel";
+import { CreditStressPanel } from "@/components/CreditStressPanel";
 import { HistoricalTable } from "@/components/HistoricalTable";
 import {
   getLatestObservations,
@@ -2796,6 +2797,7 @@ export function MacroDashboard({ region }: { region: "euro" | "dxy" }) {
           </section>
 
           <TreasuryPanel />
+          <CreditStressPanel />
 
           {/* CURRENCY BIAS */}
           <section className="mb-8">
