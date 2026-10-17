@@ -4,16 +4,16 @@ export const revalidate = 3600;
 const SOURCE = "https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release";
 
 function plain(html: string) {
-  return html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, " ")
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ")
-    .replace(/&amp;/gi, "&").replace(/\\s+/g, " ").trim();
+    .replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
 }
 function cells(row: string) {
-  return [...row.matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi)].map(m => plain(m[1]));
+  return [...row.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m => plain(m[1]));
 }
 function numeric(s: string) {
-  return Number(s.replace(/,/g, "").replace(/%/g, "").replace(/\\s/g, ""));
+  return Number(s.replace(/,/g, "").replace(/%/g, "").replace(/\s/g, ""));
 }
 export async function GET() {
   try {
@@ -21,14 +21,14 @@ export async function GET() {
     if (!response.ok) throw new Error("ABS source HTTP " + response.status);
     const html = await response.text();
     const text = plain(html);
-    const period = text.match(/Reference period\\s+([A-Za-z]+)\\s+(20\\d{2})/i);
-    const released = text.match(/Released\\s+(\\d{2}\\/\\d{2}\\/20\\d{2})/i);
+    const period = text.match(/Reference period\s+([A-Za-z]+)\s+(20\d{2})/i);
+    const released = text.match(/Released\s+(\d{2}\/\d{2}\/20\d{2})/i);
     if (!period || !released) throw new Error("ABS release metadata not found");
     const month = ["january","february","march","april","may","june","july","august","september","october","november","december"].indexOf(period[1].toLowerCase()) + 1;
     if (!month) throw new Error("ABS month not recognised");
     const date = period[2] + "-" + String(month).padStart(2,"0");
-    const section = html.match(/Key statistics\\s*-\\s*Seasonally adjusted([\\s\\S]*?)Key statistics\\s*-\\s*Trend/i)?.[1] ?? "";
-    const rows = [...section.matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)].map(m => cells(m[1]));
+    const section = html.match(/Key statistics\s*-\s*Seasonally adjusted([\s\S]*?)Key statistics\s*-\s*Trend/i)?.[1] ?? "";
+    const rows = [...section.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => cells(m[1]));
     const employed = rows.find(r => /^Employed people$/i.test(r[0] ?? ""));
     const unemployed = rows.find(r => /^Unemployment rate$/i.test(r[0] ?? ""));
     if (!employed || !unemployed || employed.length < 4 || unemployed.length < 3) throw new Error("ABS seasonally adjusted table unavailable");
