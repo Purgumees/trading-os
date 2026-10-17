@@ -10,7 +10,7 @@ type UsState = {
   };
   status?: string;
 };
-type Country = { policy?: Array<{ date: string; value: number }>; inflation?: Array<{ date: string; value: number }>; employment?: Array<{ date: string; value: number }>; errors?: string[] };
+type Country = { policy?: Array<{ date: string; value: number }>; inflation?: Array<{ date: string; yoy: number }>; employment?: Array<{ date: string; value: number }>; errors?: string[] };
 const fmt=(v:number|null,d=2)=>v===null?"Unavailable":v.toFixed(d);
 export function AudUsdMacroBias(){
  const [state,setState]=useState<{au:AuYields;us:UsState;country:Country}|null>(null);
@@ -33,11 +33,11 @@ export function AudUsdMacroBias(){
  const change=au?.two!=null&&auPrev?.two!=null&&us?.value!=null&&usPrev?.value!=null?100*((au.two-auPrev.two)-(us.value-usPrev.value)):null;
  const fresh=!!au&&!!us&&Date.now()-Date.parse(au.date+"T00:00:00Z")<14*86400000&&Date.now()-Date.parse(us.date+"T00:00:00Z")<14*86400000;
  const comparable=!!au&&!!us&&Math.abs(Date.parse(au.date)-Date.parse(us.date))<=7*86400000;
- const labourDate=state?.country.employment?.at(-1)?.date;
+ const labourDate=state?.country?.employment?.at(-1)?.date;
  const labourReleaseUnverified=!labourDate||labourDate<"2026-09";
  const directional=spread!==null&&change!==null&&fresh&&comparable&&!labourReleaseUnverified;
  const bias=!directional?"WITHHELD · macro inputs not fully verified":change>5?"Yield spread moving toward AUD":change< -5?"Yield spread moving toward USD":"Yield spread direction mixed";
- const inflation=state?.country.inflation?.at(-1);
+ const inflation=state?.country?.inflation?.at(-1);
  return <section className="mb-8 rounded-xl border p-5" aria-label="AUD USD relative macro">
   <h2 className="text-xl font-semibold">AUD/USD · Relative Macro Bias</h2>
   <p className="mt-2 text-sm text-muted-foreground">Relative rates are one input, not a trade recommendation. A complete bias also needs RBA/Fed repricing, China demand and global risk sentiment.</p>
@@ -56,13 +56,13 @@ export function AudUsdMacroBias(){
     <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Recent relative yield move*</p><p className="text-xl font-semibold">{fmt(change,0)} bp</p></div>
    </div>
    <p className="mt-3 text-xs text-muted-foreground">*Latest versus fifth preceding available observation for each series, not necessarily the same dates. This is descriptive, not a validated signal. Signal is withheld if yields are stale, dates differ, or AUD employment data predates September 2026. Historical OECD observations are not a substitute for the latest ABS release.</p>
-   <p className="mt-3 text-sm">Australia latest headline CPI: {inflation?inflation.value.toFixed(2)+"% YoY ("+inflation.date+")":"Unavailable"} · RBA policy: {state.country.policy?.at(-1)?.value?.toFixed(2)??"Unavailable"}%.</p>
+   <p className="mt-3 text-sm">Australia latest headline CPI: {inflation && typeof inflation.yoy === "number" ? inflation.yoy.toFixed(2)+"% YoY ("+inflation.date+")" : "Unavailable"} · RBA policy: {state.country?.policy?.at(-1)?.value?.toFixed(2)??"Unavailable"}%.</p>
    <div className="mt-4 grid gap-3 md:grid-cols-3">
     <div className="rounded-lg border p-3"><h3 className="font-semibold">RBA vs Fed</h3><p className="mt-2 text-sm text-muted-foreground">Check expected rates for the next three meetings. A widening AU–US 2Y spread can support AUD; it is not sufficient by itself.</p></div>
     <div className="rounded-lg border p-3"><h3 className="font-semibold">China & commodities</h3><p className="mt-2 text-sm text-muted-foreground">China PMI, iron ore and RBA commodity price index are not connected to this signal. No bullish/bearish assumption is made.</p><a className="mt-2 inline-block text-sm underline" href="https://www.rba.gov.au/statistics/tables/" target="_blank" rel="noreferrer">RBA commodity data ↗</a></div>
     <div className="rounded-lg border p-3"><h3 className="font-semibold">Risk sentiment</h3><p className="mt-2 text-sm text-muted-foreground">Global equity risk appetite and volatility are not connected. Confirm the risk backdrop before trading AUD/USD.</p></div>
    </div>
-   {(state.au.error||state.country.errors?.length)?<p role="status" className="mt-3 text-amber-500">{[state.au.error,...(state.country.errors||[])].filter(Boolean).join(" · ")}</p>:null}
+   {(state.au.error||state.country?.errors?.length)?<p role="status" className="mt-3 text-amber-500">{[state.au.error,...(state.country?.errors||[])].filter(Boolean).join(" · ")}</p>:null}
   </>}
  </section>;
 }
