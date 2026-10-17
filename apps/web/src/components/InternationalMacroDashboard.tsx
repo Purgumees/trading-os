@@ -15,6 +15,7 @@ import { InternationalYields } from "./InternationalYields";
 import { CentralBankWatch } from "./CentralBankWatch";
 import { MacroPageHeader } from "./MacroPageHeader";
 import { MacroHistoryChart } from "./MacroHistoryChart";
+import { AudEmploymentChart } from "./AudEmploymentChart";
 import { QuarterlyGrowthHistory } from "./QuarterlyGrowthHistory";
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${v.toFixed(2)}%`);
 function Metric({
@@ -219,11 +220,7 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
             <section className="rounded-xl border p-5 min-w-0 lg:col-span-2">
               <h2 className="text-xl font-semibold">Jobs · employment change</h2>
               {country === "aud" ? (
-                <div className="mt-3 rounded-lg border border-amber-500/60 p-4 text-sm">
-                  <p className="font-semibold">AUD employment: official ABS release only</p>
-                  <p className="mt-2">The OECD/FRED historical employment chart has been removed from this AUD section because it lags official ABS releases and is not directly comparable to the latest ABS series. See the live ABS labour release panel at the top of this page for the latest verified observation. A full historical chart will return only after an official, consistently defined ABS history feed is connected and validated.</p>
-                  <a className="mt-2 inline-block underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release" target="_blank" rel="noreferrer">Official ABS labour data ↗</a>
-                </div>
+                <AudEmploymentChart />
               ) : (
                 <>
               <p className="mt-3 text-3xl font-bold">
