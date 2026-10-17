@@ -96,8 +96,8 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
     { name: "Employment", date: data.employment?.at(-1)?.date, days: c.quarterlyEmployment ? 160 : 65 },
   ].map(item => {
     const date = item.date ?? "";
-    const q = date.match(/^(\\d{4})-Q([1-4])$/);
-    const normalized = q ? `${q[1]}-${String(Number(q[2]) * 3).padStart(2,"0")}-01` : /^\\d{4}-\\d{2}$/.test(date) ? date + "-01" : date;
+    const q = date.match(/^(\d{4})-Q([1-4])$/);
+    const normalized = q ? `${q[1]}-${String(Number(q[2]) * 3).padStart(2,"0")}-01` : /^\d{4}-\d{2}$/.test(date) ? date + "-01" : date;
     const timestamp = Date.parse(normalized + "T00:00:00Z");
     return { ...item, status: !Number.isFinite(timestamp) ? "MISSING" : Date.now() - timestamp > item.days * 86400000 ? "STALE / VERIFY" : "HISTORICAL / VERIFY RELEASE" };
   }) : [];
