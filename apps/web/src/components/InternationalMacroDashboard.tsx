@@ -88,6 +88,21 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
   const last = data?.inflation.at(-1);
   const employment = employmentHistory(data?.employment ?? [], c.quarterlyEmployment);
   const latestEmployment = employment.at(-1);
+  const dataChecks = data ? [
+    { name: "Policy rate", date: data.policy.at(-1)?.date, days: 45 },
+    { name: "GDP", date: data.gdp.at(-1)?.date, days: 160 },
+    { name: "Headline CPI", date: data.inflation.at(-1)?.date, days: c.quarterlyCpi ? 160 : 65 },
+    { name: "Unemployment", date: data.labour.at(-1)?.date, days: c.quarterlyLabour ? 160 : 65 },
+    { name: "Employment", date: data.employment?.at(-1)?.date, days: c.quarterlyEmployment ? 160 : 65 },
+  ].map(item => {
+    const date = item.date ?? "";
+    const q = date.match(/^(\\d{4})-Q([1-4])$/);
+    const normalized = q ? `${q[1]}-${String(Number(q[2]) * 3).padStart(2,"0")}-01` : /^\\d{4}-\\d{2}$/.test(date) ? date + "-01" : date;
+    const timestamp = Date.parse(normalized + "T00:00:00Z");
+    return { ...item, status: !Number.isFinite(timestamp) ? "MISSING" : Date.now() - timestamp > item.days * 86400000 ? "STALE / VERIFY" : "HISTORICAL / VERIFY RELEASE" };
+  }) : [];
+  const hasDataWarnings = dataChecks.some(item => item.status !== "HISTORICAL / VERIFY RELEASE") || !!data?.errors.length;
+
   const employmentStale = country === "aud" && (!latestEmployment || Date.now() - Date.parse(latestEmployment.date.length === 7 ? latestEmployment.date + "-01T00:00:00Z" : latestEmployment.date + "T00:00:00Z") > 40 * 86400000);
 
   return (
@@ -103,6 +118,12 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
       )}
       {data && (
         <>
+          <section aria-label="Macro data audit" className="mb-5 rounded-xl border border-amber-500/60 p-4">
+            <h2 className="font-semibold">{hasDataWarnings ? "DATA QUALITY WARNING · trading signals not verified" : "DATA SOURCE STATUS · release verification required"}</h2>
+            <p className="mt-2 text-sm">These are historical observations from configured providers, not independently verified latest economic releases. A recent observation date does not prove a new report has not been published. Check official releases before trading.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{dataChecks.map(item=><div className="rounded border p-2 text-xs" key={item.name}><strong>{item.name}</strong><div>{item.date || "No data"} · {item.status}</div></div>)}</div>
+            {country === "aud" && <p className="mt-3 text-sm"><strong>Australia:</strong> September 2026 ABS labour report was released 15 October 2026. If employment below still shows August, it is not the latest release. <a className="underline" target="_blank" rel="noreferrer" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/sep-2026">Official ABS September report ↗</a></p>}
+          </section>
           <div className="mb-5 text-xs text-muted-foreground">
             Updated {macroDateLabel(data.fetchedAt.slice(0, 10), true)} · Dates on each chart are
             observation periods, not release dates. Sources update at different times.
