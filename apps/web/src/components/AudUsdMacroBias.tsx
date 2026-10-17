@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 type Row = { date: string; two: number | null };
 type AuYields = { rows?: Row[]; error?: string };
 type UsState = { economyState?: { usRatesYieldCurve?: { recentHistory?: { "2Y"?: Array<{date:string;value:number}> } }; inflation?: {headline?:{cpi?:{yoy?:{current?:{value:number|null}}}}}} }; status?:string };
-type Country = {policy?:Array<{date:string;value:number}>; inflation?:Array<{date:string;yoy:number}>; employment?:Array<{date:string;value:number}>; errors?:string[]};
+type Country = { policy?: Array<{ date: string; value: number }>; inflation?: Array<{ date: string; yoy: number }>; employment?: Array<{ date: string; value: number }>; errors?: string[] };
 const fmt=(v:number|null,d=2)=>v===null?"Unavailable":v.toFixed(d);
 export function AudUsdMacroBias(){
  const [state,setState]=useState<{au:AuYields;us:UsState;country:Country}|null>(null);
