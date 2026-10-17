@@ -1,3 +1,2 @@
-import {MacroPageHeader} from '@/components/MacroPageHeader';
-import {WeeklyForecast} from '@/components/WeeklyForecast';
-export default function Page(){return <main className="mx-auto w-full max-w-7xl p-4 md:p-8"><MacroPageHeader title="WEEKLY FORECAST · my weekly plan" description="Macro theme → TradingView chart → price zones → conditional scenarios → end-of-week review."/><WeeklyForecast/></main>;}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/weekly#my-charts');}
