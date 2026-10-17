@@ -5,7 +5,7 @@ import {ecbDollarPrices,ecbFxSource} from '@/lib/ecb-fx';
 export const maxDuration=60;
 export async function GET(){
  const [data,fx]=await Promise.allSettled([
-  weekly().then(r=>r.json()),
+  weekly(new Request('https://trading-os.local/api/macro/weekly')).then(r=>r.json()),
   download('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml').then(r=>r.text()).then(ecbDollarPrices),
  ]);
  if(data.status==='rejected')return NextResponse.json({error:'Weekly theme evidence unavailable'},{status:503});
