@@ -88,6 +88,8 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
   const last = data?.inflation.at(-1);
   const employment = employmentHistory(data?.employment ?? [], c.quarterlyEmployment);
   const latestEmployment = employment.at(-1);
+  const employmentStale = country === "aud" && (!latestEmployment || Date.now() - Date.parse(latestEmployment.date.length === 7 ? latestEmployment.date + "-01T00:00:00Z" : latestEmployment.date + "T00:00:00Z") > 40 * 86400000);
+
   return (
     <main className="mx-auto w-full max-w-7xl p-4 md:p-8">
       <MacroRegionNav region={country} />
@@ -195,6 +197,8 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
             />
             <section className="rounded-xl border p-5 min-w-0 lg:col-span-2">
               <h2 className="text-xl font-semibold">Jobs · employment change</h2>
+              {country === "aud" && <div role="alert" className="mt-3 rounded-lg border border-amber-500 p-3 text-sm"><strong>Important: historical OECD/FRED series, not the latest ABS economic-calendar release.</strong> {employmentStale ? "This series may be behind the latest labour-market announcement. Do not use the number below as the latest AUD trading signal." : "Verify the latest ABS release before trading."} <a className="underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia" target="_blank" rel="noreferrer">Check the latest official ABS employment and unemployment figures ↗</a></div>}
+
               <p className="mt-3 text-3xl font-bold">
                 {latestEmployment?.change == null
                   ? "—"
