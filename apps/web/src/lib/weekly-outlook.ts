@@ -1,7 +1,7 @@
 import type {WeeklyEvent} from './weekly-calendar';
 import {FOREX_PAIRS,type Currency,type ComparisonSnapshot} from './pair-macro';
 import {pairSupport} from './pair-support';
-import {yieldChanges,type YieldData} from './international-yields';
+import type {YieldData} from './international-yields';
 import type {BankWatch} from './central-bank-watch';
 import {comparisonSeries} from './pair-macro';
 export const currencies:Currency[]=['EUR','USD','GBP','JPY','AUD','CAD','NZD'];
@@ -47,10 +47,9 @@ export function weeklyOutlook(data:WeeklyData){
  const result=pairSupport({pair,base:b.input.macro,quote:q.input.macro},data.asOf);
  const quoteYields=new Map((q.input.yields?.rows??[]).filter(r=>r.two!==null).map(r=>[r.date,r.two!]));
  const matched=(b.input.yields?.rows??[]).flatMap(r=>r.two!==null&&quoteYields.has(r.date)?[{date:r.date,value:r.two-quoteYields.get(r.date)!}]:[]);
- const delta=yieldChanges(matched,r=>r.value);const latest=delta.latest,change=delta.changes.oneWeek;
- const fresh=latest&&days(data.asOf,latest.date)>=0&&days(data.asOf,latest.date)<=7;
- const gap=fresh&&change?change.value:null;
- const yieldPeriod=latest&&change?`${change.date} → ${latest.date}`:null;
+ const delta=fridayYieldChange(matched.map(r=>({...r,two:r.value,ten:null})), 'two',data.asOf);
+ const gap=delta?.value??null;
+ const yieldPeriod=delta?.period??null;
  const yieldDirection=gap===null?null:sign(gap,1);
  const macroDirection=result.winner===b.input.currency?1:result.winner===q.input.currency?-1:0;
  const winner=macroDirection!==0&&yieldDirection===macroDirection?result.winner:null;
