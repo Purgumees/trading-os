@@ -218,8 +218,14 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
             />
             <section className="rounded-xl border p-5 min-w-0 lg:col-span-2">
               <h2 className="text-xl font-semibold">Jobs · employment change</h2>
-              {country === "aud" && <div role="alert" className="mt-3 rounded-lg border border-amber-500 p-3 text-sm"><strong>Important: historical OECD/FRED series, not the latest ABS economic-calendar release.</strong> {employmentStale ? "This series may be behind the latest labour-market announcement. Do not use the number below as the latest AUD trading signal." : "Verify the latest ABS release before trading."} <a className="underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia" target="_blank" rel="noreferrer">Check the latest official ABS employment and unemployment figures ↗</a></div>}
-
+              {country === "aud" ? (
+                <div className="mt-3 rounded-lg border border-amber-500/60 p-4 text-sm">
+                  <p className="font-semibold">AUD employment: official ABS release only</p>
+                  <p className="mt-2">The OECD/FRED historical employment chart has been removed from this AUD section because it lags official ABS releases and is not directly comparable to the latest ABS series. See the live ABS labour release panel at the top of this page for the latest verified observation. A full historical chart will return only after an official, consistently defined ABS history feed is connected and validated.</p>
+                  <a className="mt-2 inline-block underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release" target="_blank" rel="noreferrer">Official ABS labour data ↗</a>
+                </div>
+              ) : (
+                <>
               <p className="mt-3 text-3xl font-bold">
                 {latestEmployment?.change == null
                   ? "—"
@@ -259,6 +265,8 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
               >
                 Employment source ↗
               </a>
+                </>
+              )}
             </section>
           </div>
           <aside className="mt-6 rounded-xl border p-5">
