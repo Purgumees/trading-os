@@ -2,8 +2,15 @@
 import { useEffect, useState } from "react";
 type Row = { date: string; two: number | null };
 type AuYields = { rows?: Row[]; error?: string };
-type UsState = { economyState?: { usRatesYieldCurve?: { recentHistory?: { "2Y"?: Array<{date:string;value:number}> } }; inflation?: {headline?:{cpi?:{yoy?:{current?:{value:number|null}}}}}} }; status?:string };
-type Country = { policy?: Array<{ date: string; value: number }>; inflation?: Array<{ date: string; yoy: number }>; employment?: Array<{ date: string; value: number }>; errors?: string[] };
+type UsState = {
+  economyState?: {
+    usRatesYieldCurve?: {
+      recentHistory?: { "2Y"?: Array<{ date: string; value: number }> };
+    };
+  };
+  status?: string;
+};
+type Country = { policy?: Array<{ date: string; value: number }>; inflation?: Array<{ date: string; value: number }>; employment?: Array<{ date: string; value: number }>; errors?: string[] };
 const fmt=(v:number|null,d=2)=>v===null?"Unavailable":v.toFixed(d);
 export function AudUsdMacroBias(){
  const [state,setState]=useState<{au:AuYields;us:UsState;country:Country}|null>(null);
@@ -49,7 +56,7 @@ export function AudUsdMacroBias(){
     <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Recent relative yield move*</p><p className="text-xl font-semibold">{fmt(change,0)} bp</p></div>
    </div>
    <p className="mt-3 text-xs text-muted-foreground">*Latest versus fifth preceding available observation for each series, not necessarily the same dates. This is descriptive, not a validated signal. Signal is withheld if yields are stale, dates differ, or AUD employment data predates September 2026. Historical OECD observations are not a substitute for the latest ABS release.</p>
-   <p className="mt-3 text-sm">Australia latest headline CPI: {inflation?inflation.yoy.toFixed(2)+"% YoY ("+inflation.date+")":"Unavailable"} · RBA policy: {state.country.policy?.at(-1)?.value?.toFixed(2)??"Unavailable"}%.</p>
+   <p className="mt-3 text-sm">Australia latest headline CPI: {inflation?inflation.value.toFixed(2)+"% YoY ("+inflation.date+")":"Unavailable"} · RBA policy: {state.country.policy?.at(-1)?.value?.toFixed(2)??"Unavailable"}%.</p>
    <div className="mt-4 grid gap-3 md:grid-cols-3">
     <div className="rounded-lg border p-3"><h3 className="font-semibold">RBA vs Fed</h3><p className="mt-2 text-sm text-muted-foreground">Check expected rates for the next three meetings. A widening AU–US 2Y spread can support AUD; it is not sufficient by itself.</p></div>
     <div className="rounded-lg border p-3"><h3 className="font-semibold">China & commodities</h3><p className="mt-2 text-sm text-muted-foreground">China PMI, iron ore and RBA commodity price index are not connected to this signal. No bullish/bearish assumption is made.</p><a className="mt-2 inline-block text-sm underline" href="https://www.rba.gov.au/statistics/tables/" target="_blank" rel="noreferrer">RBA commodity data ↗</a></div>
