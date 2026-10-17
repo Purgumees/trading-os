@@ -1,4 +1,5 @@
+import {CurrencyWeeklyFundamentals} from "@/components/CurrencyWeeklyFundamentals";
 import { InternationalMacroDashboard } from "@/components/InternationalMacroDashboard";
 export default function Page() {
-  return <InternationalMacroDashboard country="nzd" />;
+  return <><InternationalMacroDashboard country="nzd" /><CurrencyWeeklyFundamentals currency="NZD" /></>;
 }
