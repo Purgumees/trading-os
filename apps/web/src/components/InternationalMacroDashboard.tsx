@@ -218,6 +218,17 @@ export function InternationalMacroDashboard({ country }: { country: Country }) {
             />
             <section className="rounded-xl border p-5 min-w-0 lg:col-span-2">
               <h2 className="text-xl font-semibold">Jobs · employment change</h2>
+              {country === "aud" && <section aria-label="Latest verified ABS labour release" className="mt-3 rounded-lg border border-amber-500 p-4">
+                <h3 className="font-semibold">Latest independently checked ABS release · September 2026</h3>
+                <p className="mt-1 text-xs">Released 15 October 2026 · Seasonally adjusted · Verified snapshot, NOT a live auto-updating feed</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <div><div className="text-xs text-muted-foreground">Employment change</div><strong>−39,300</strong></div>
+                  <div><div className="text-xs text-muted-foreground">Total employed</div><strong>14,782,700</strong></div>
+                  <div><div className="text-xs text-muted-foreground">Unemployment rate</div><strong>4.7%</strong></div>
+                </div>
+                <p className="mt-2 text-xs">August 2026 employment was revised to 14,822,000. ABS September survey includes methodological changes; distinguish seasonally adjusted from trend data. The OECD/FRED chart below is a different, potentially delayed historical series.</p>
+                <a className="mt-2 inline-block text-sm underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/sep-2026" target="_blank" rel="noreferrer">ABS original release ↗</a>
+              </section>}
               {country === "aud" && <div role="alert" className="mt-3 rounded-lg border border-amber-500 p-3 text-sm"><strong>Important: historical OECD/FRED series, not the latest ABS economic-calendar release.</strong> {employmentStale ? "This series may be behind the latest labour-market announcement. Do not use the number below as the latest AUD trading signal." : "Verify the latest ABS release before trading."} <a className="underline" href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia" target="_blank" rel="noreferrer">Check the latest official ABS employment and unemployment figures ↗</a></div>}
 
               <p className="mt-3 text-3xl font-bold">
