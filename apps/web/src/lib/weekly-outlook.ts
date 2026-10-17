@@ -11,13 +11,22 @@ export type WeeklyData={asOf:string;inputs:WeeklyInput[];calendar?:{events:Weekl
 export type Driver={label:string;value:number|null;unit:string;period:string;direction:number|null;reason:string};
 const days=(a:string,b:string)=>(Date.parse(a)-Date.parse(b))/86400000;
 const sign=(v:number,threshold:number)=>Math.abs(v)<threshold?0:Math.sign(v);
+export function fridayYieldChange(rows:{date:string;two:number|null;ten:number|null}[],term:'two'|'ten',asOf:string){
+ const now=new Date(asOf);const today=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+ const weekday=today.getUTCDay();const daysSinceFriday=(weekday+2)%7;
+ const lastFriday=new Date(today);lastFriday.setUTCDate(today.getUTCDate()-daysSinceFriday-(daysSinceFriday===0?7:0));
+ const previousFriday=new Date(lastFriday);previousFriday.setUTCDate(lastFriday.getUTCDate()-7);
+ const iso=(d:Date)=>d.toISOString().slice(0,10);
+ const available=rows.filter(r=>r[term]!==null).sort((a,b)=>a.date.localeCompare(b.date));
+ const pick=(friday:Date)=>{const cutoff=iso(friday);const earliest=new Date(friday);earliest.setUTCDate(friday.getUTCDate()-3);return available.findLast(r=>r.date<=cutoff&&r.date>=iso(earliest));};
+ const start=pick(previousFriday),end=pick(lastFriday);
+ return start&&end?{value:(end[term]!-start[term]!)*100,period:`${start.date} → ${end.date}`,start:start.date,end:end.date}:null;
+}
 export function currencyDrivers(input:WeeklyInput,asOf:string):Driver[]{
  const out:Driver[]=[];const m=input.watch?.meetings[0];const w=input.watch;
  const repricing=m&&m.weekAgo!==null&&w?.asOf&&days(asOf,w.asOf)>=0&&days(asOf,w.asOf)<=7?(m.expected-m.weekAgo)*100:null;
  out.push({label:'Expected rate · weekly repricing',value:repricing,unit:'bp',period:m?`Meeting ${m.date} · source ${w?.asOf}`:'No verified meeting history',direction:repricing===null?null:sign(repricing,1),reason:'Same meeting now versus week ago. Higher expected rates = potential support; independent model, not official forecast.'});
- const y=yieldChanges(input.yields?.rows??[],r=>r.two);const change=y.changes.oneWeek;
- const fresh=y.latest&&days(asOf,y.latest.date)>=0&&days(asOf,y.latest.date)<=7;
- out.push({label:'2Y yield · 1W',value:change&&fresh?change.value:null,unit:'bp',period:change&&y.latest?`${change.date} → ${y.latest.date}`:'Unavailable',direction:change&&fresh?sign(change.value,1):null,reason:input.yields?.definition??'No comparable government yield feed connected.'});
+ for(const [term,label] of [['two','2Y'],['ten','10Y']] as const){const change=fridayYieldChange(input.yields?.rows??[],term,asOf);out.push({label:`${label} yield · Friday-to-Friday`,value:change?.value??null,unit:'bp',period:change?.period??'Friday observations unavailable',direction:change?sign(change.value,1):null,reason:input.yields?.definition??'No comparable government yield feed connected.'});}
  const series=input.macro?comparisonSeries(input.macro):null;const g=series?.gdp.at(-1),old=series?.gdp.at(-2);
  const quarterEnd=(p:string)=>Date.UTC(Number(p.slice(0,4)),Number(p.at(-1))*3,0);
  const gFresh=g&&old&&Date.parse(asOf)>=quarterEnd(g.date)&&Date.parse(asOf)-quarterEnd(g.date)<=150*86400000;
