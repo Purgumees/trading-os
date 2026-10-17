@@ -6,7 +6,7 @@ const macroLink=(c:string)=>c==='USD'?'/dxy':c==='EUR'?'/euro':`/${c.toLowerCase
 export function PairMacroSnapshot({pair}:{pair:string}){
  const [data,setData]=useState<WeeklyData|null>(null);
  const [error,setError]=useState('');
- useEffect(()=>{const controller=new AbortController();fetch('/api/macro/weekly',{signal:controller.signal}).then(r=>{if(!r.ok)throw Error('Macro data unavailable');return r.json();}).then(setData).catch(e=>{if(e.name!=='AbortError')setError('Macro data unavailable');});return()=>controller.abort();},[]);
+ useEffect(()=>{const controller=new AbortController();fetch(`/api/macro/weekly?pair=${encodeURIComponent(pair)}`,{signal:controller.signal}).then(r=>{if(!r.ok)throw Error('Macro data unavailable');return r.json();}).then(setData).catch(e=>{if(e.name!=='AbortError')setError('Macro data unavailable');});return()=>controller.abort();},[pair]);
  if(!data)return <section className="rounded-lg border p-4 text-sm">{error||'Loading macro summary…'}</section>;
  const view=weeklyOutlook(data);
  const currencies=[pair.slice(0,3),pair.slice(3)];
