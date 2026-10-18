@@ -3,7 +3,6 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {ForecastCatalysts} from './ForecastCatalysts';
 import {PairMacroSnapshot} from './PairMacroSnapshot';
-import {FOREX_PAIRS} from '@/lib/pair-macro';
 import {outlookWeek,type WeeklyData} from '@/lib/weekly-outlook';
 import {themeReview} from '@/lib/pair-theme';
 import {createForecast,readForecast,keyForWeek,nextWeek,safeChartUrl,putChart,getChart,imageData,type Forecast,type PairForecast,WEEKLY_INSTRUMENTS,type WeeklyInstrument} from '@/lib/weekly-forecast';
