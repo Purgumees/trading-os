@@ -25,5 +25,26 @@ export function mt5Candidates(snapshot:Mt5Snapshot,account:JournalAccount){
  const day=new Date(first.date+'T00:00:00Z');day.setUTCDate(day.getUTCDate()-(day.getUTCDay()+6)%7);const p=newTradePlan(day.toISOString().slice(0,10));p.mt5Source=`${s.server}|${s.account}|${id}`;p.id=`mt5-${s.account}-${encodeURIComponent(s.server)}-${id}`;p.style=account.style;p.pair=first.symbol;p.direction=first.type===0?'long':'short';p.title=`MT5 ${s.account} · position ${id}`;p.journal={...p.journal,accountId:account.id,state:'closed',actualDate:first.date,actualTime:first.time,timezone:s.timezone,actualEntry:String(entries.reduce((n,d)=>n+d.volume*d.price,0)/vin),exitPrice:String(exits.reduce((n,d)=>n+d.volume*d.price,0)/vout),closedDate:last.date,closedTime:last.time,netPnl:String(g.reduce((n,d)=>n+d.profit+d.commission+d.swap+d.fee,0)),recordedWithoutPlan:true};
  p.resultNotes=`Imported MT5 position ${id}; ${g.length} deals; volume-weighted entry/exit. Initial risk and setup require your review. Standalone account fees are excluded.`;plans.push(p);
  }
- return {plans,warnings};
+ // Group separate MT5 positions into one idea only when account, symbol, direction,
+ // opening volume and first-entry time all match within a five-minute window.
+ const ordered=[...plans].sort((a,b)=>(a.journal.actualDate+a.journal.actualTime).localeCompare(b.journal.actualDate+b.journal.actualTime));
+ const merged:TradePlan[]=[];
+ const firstVolume=(p:TradePlan)=>{const id=p.mt5Source?.split('|').at(-1);const deals=s.deals.filter(d=>d.position===id&&d.entry===0);return deals.reduce((n,d)=>n+d.volume,0);};
+ const firstMs=(p:TradePlan)=>executionTimestamp(p.journal.actualDate,p.journal.actualTime,s.timezone);
+ for(const p of ordered){
+  const volume=firstVolume(p),at=firstMs(p);
+  const anchor=merged.find(m=>m.pair===p.pair&&m.direction===p.direction&&m.style===p.style&&m.journal.accountId===p.journal.accountId&&Math.abs(firstVolume(m)-volume)<1e-7&&at!==null&&firstMs(m)!==null&&at-firstMs(m)!>=0&&at-firstMs(m)!<=300000);
+  if(!anchor){merged.push(p);continue;}
+  const ids=[anchor.mt5Source!,p.mt5Source!].flatMap(x=>x.split('::')).sort();
+  const oldIds=anchor.mt5Source!.split('::');
+  const groupCount=oldIds.length+1;
+  const oldPnl=Number(anchor.journal.netPnl),newPnl=Number(p.journal.netPnl);
+  anchor.mt5Source=ids.join('::');
+  anchor.id='mt5-idea-'+encodeURIComponent(ids.join('::'));
+  anchor.title='MT5 '+s.account+' · '+groupCount+' positions / 1 trade idea';
+  anchor.journal.netPnl=String(oldPnl+newPnl);
+  if((p.journal.closedDate+p.journal.closedTime)>(anchor.journal.closedDate+anchor.journal.closedTime)){anchor.journal.closedDate=p.journal.closedDate;anchor.journal.closedTime=p.journal.closedTime;}
+  anchor.resultNotes='MT5 grouped trade idea ('+groupCount+' positions). Combined realized P&L. Review initial risk and setup.';
+ }
+ return {plans:merged,warnings};
 }
