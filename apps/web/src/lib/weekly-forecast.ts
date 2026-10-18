@@ -1,16 +1,18 @@
-import {FOREX_PAIRS,type ForexPair} from './pair-macro';
+import {FOREX_PAIRS} from './pair-macro';
+export const WEEKLY_INSTRUMENTS=[...FOREX_PAIRS,'NAS100','XAUUSD'] as const;
+export type WeeklyInstrument=(typeof WEEKLY_INSTRUMENTS)[number];
 export type PairForecast={enabled:boolean;bias:'long'|'short'|'both'|'wait';theme:string;themeReviewedAt:string;levels:string;longScenario:string;shortScenario:string;invalidates:string;catalysts:string;chartUrl:string;actual:string;lesson:string;result:'pending'|'followed'|'invalidated'|'mixed'|'not_traded';beforeImage:string;chartTitle1:string;chartTitle2:string;chartTitle3:string;beforeImage2:string;beforeImage3:string;afterImage:string};
-export type Forecast={version:1;week:string;updatedAt:string;summary:string;review:string;pairs:Record<ForexPair,PairForecast>};
+export type Forecast={version:1;week:string;updatedAt:string;summary:string;review:string;pairs:Record<WeeklyInstrument,PairForecast>};
 export const keyForWeek=(week:string)=>`trading-weekly-forecast-v1-${week}`;
 export function blankPair():PairForecast{return{enabled:false,bias:'wait',theme:'',themeReviewedAt:'',levels:'',longScenario:'',shortScenario:'',invalidates:'',catalysts:'',chartUrl:'',actual:'',lesson:'',result:'pending',beforeImage:'',chartTitle1:'',chartTitle2:'',chartTitle3:'',beforeImage2:'',beforeImage3:'',afterImage:''};}
-export function createForecast(week:string):Forecast{return{version:1,week,updatedAt:new Date().toISOString(),summary:'',review:'',pairs:Object.fromEntries(FOREX_PAIRS.map(pair=>[pair,blankPair()])) as Forecast['pairs']};}
+export function createForecast(week:string):Forecast{return{version:1,week,updatedAt:new Date().toISOString(),summary:'',review:'',pairs:Object.fromEntries(WEEKLY_INSTRUMENTS.map(pair=>[pair,blankPair()])) as Forecast['pairs']};}
 export function validWeek(week:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(week))return false;const d=new Date(`${week}T00:00:00Z`);return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===week&&d.getUTCDay()===1;}
 export function nextWeek(week:string,offset:number){const d=new Date(`${week}T00:00:00Z`);d.setUTCDate(d.getUTCDate()+offset*7);return d.toISOString().slice(0,10);}
 export function safeChartUrl(value:string){try{const u=new URL(value);return u.protocol==='https:'&&(u.hostname==='tradingview.com'||u.hostname.endsWith('.tradingview.com'))?u.href:null;}catch{return null;}}
 export function readForecast(value:unknown):Forecast{
  if(!value||typeof value!=='object')throw Error('Forecast format unavailable');const v=value as Forecast;
  if(v.version!==1||typeof v.week!=='string'||!validWeek(v.week)||typeof v.updatedAt!=='string'||!Number.isFinite(Date.parse(v.updatedAt))||typeof v.summary!=='string'||typeof v.review!=='string'||!v.pairs)throw Error('Invalid forecast version or week');
- for(const pair of FOREX_PAIRS){const p=v.pairs[pair];if(!p||typeof p.enabled!=='boolean'||!['long','short','both','wait'].includes(p.bias)||!['pending','followed','invalidated','mixed','not_traded'].includes(p.result))throw Error(`Invalid ${pair} forecast`);for(const key of ['beforeImage2','beforeImage3','chartTitle1','chartTitle2','chartTitle3'] as const){if(p[key]===undefined)p[key]='';}
+ for(const pair of WEEKLY_INSTRUMENTS){if(!v.pairs[pair]&&(pair==='NAS100'||pair==='XAUUSD'))v.pairs[pair]=blankPair();const p=v.pairs[pair];if(!p||typeof p.enabled!=='boolean'||!['long','short','both','wait'].includes(p.bias)||!['pending','followed','invalidated','mixed','not_traded'].includes(p.result))throw Error(`Invalid ${pair} forecast`);for(const key of ['beforeImage2','beforeImage3','chartTitle1','chartTitle2','chartTitle3'] as const){if(p[key]===undefined)p[key]='';}
  if(p.themeReviewedAt&&!Number.isFinite(Date.parse(p.themeReviewedAt)))throw Error('Invalid theme review date');for(const k of Object.keys(blankPair()) as (keyof PairForecast)[]){if(k==='enabled')continue;const x=p[k];if(typeof x!=='string'||x.length>20000)throw Error(`Invalid ${pair} field`);}}
  return v;
 }
