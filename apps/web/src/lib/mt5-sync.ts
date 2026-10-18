@@ -30,10 +30,11 @@ export function mt5Candidates(snapshot:Mt5Snapshot,account:JournalAccount){
  const ordered=[...plans].sort((a,b)=>(a.journal.actualDate+a.journal.actualTime).localeCompare(b.journal.actualDate+b.journal.actualTime));
  const merged:TradePlan[]=[];
  const firstVolume=(p:TradePlan)=>{const id=p.mt5Source?.split('|').at(-1);const deals=s.deals.filter(d=>d.position===id&&d.entry===0);return deals.reduce((n,d)=>n+d.volume,0);};
+ const originalVolumes=new WeakMap<TradePlan,number>();
  const firstMs=(p:TradePlan)=>executionTimestamp(p.journal.actualDate,p.journal.actualTime,s.timezone);
  for(const p of ordered){
-  const volume=firstVolume(p),at=firstMs(p);
-  const anchor=merged.find(m=>m.pair===p.pair&&m.direction===p.direction&&m.style===p.style&&m.journal.accountId===p.journal.accountId&&Math.abs(firstVolume(m)-volume)<1e-7&&at!==null&&firstMs(m)!==null&&at-firstMs(m)!>=0&&at-firstMs(m)!<=300000);
+  const volume=firstVolume(p),at=firstMs(p);originalVolumes.set(p,volume);
+  const anchor=merged.find(m=>m.pair===p.pair&&m.direction===p.direction&&m.style===p.style&&m.journal.accountId===p.journal.accountId&&Math.abs((originalVolumes.get(m)??firstVolume(m))-volume)<1e-7&&at!==null&&firstMs(m)!==null&&at-firstMs(m)!>=0&&at-firstMs(m)!<=300000);
   if(!anchor){merged.push(p);continue;}
   const ids=[anchor.mt5Source!,p.mt5Source!].flatMap(x=>x.split('::')).sort();
   const oldIds=anchor.mt5Source!.split('::');
