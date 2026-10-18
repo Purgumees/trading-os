@@ -47,7 +47,15 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
           s.observations.map(({ date, value }) => ({ date, value })),
         ),
     us
-      ? fred("CPIAUCSL").then((rows) => ({ rows: indexInflation(rows), estimated: [] as string[] }))
+      ? Promise.all([fred("CPIAUCNS"), fred("CPIAUCSL")]).then(([unadjusted,adjusted]) => {
+          // BLS official 12-month headline CPI is not seasonally adjusted.
+          // Its monthly change is seasonally adjusted; do not calculate both from CPIAUCSL.
+          const adjustedChanges = new Map(indexInflation(adjusted).map(r => [r.date, r.change]));
+          return {
+            rows: indexInflation(unadjusted).map(r => ({ ...r, change: adjustedChanges.get(r.date) ?? null })),
+            estimated: [] as string[],
+          };
+        })
       : fetchEurostatHicpSeries("TOTAL").then((s) => ({
           rows: indexInflation(s.observations.map((r) => ({ date: r.date, value: r.index }))),
           estimated: s.observations.filter((r) => r.flag?.includes("e")).map((r) => r.date),
@@ -83,7 +91,7 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
     name: us ? "United States" : "Euro area",
     policyLabel: us ? "Fed target range · upper bound" : "ECB deposit facility rate",
     inflationLabel: us
-      ? "Headline CPI · YoY · seasonally adjusted"
+      ? "Headline CPI · YoY not seasonally adjusted; MoM seasonally adjusted"
       : "Headline HICP · YoY · not seasonally adjusted",
     labourLabel: us
       ? "US unemployment · seasonally adjusted"
@@ -95,7 +103,7 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
         ? "https://fred.stlouisfed.org/series/DFEDTARU"
         : "https://data.bis.org/topics/CBPOL",
       inflation: us
-        ? "https://fred.stlouisfed.org/series/CPIAUCSL"
+        ? "https://fred.stlouisfed.org/series/CPIAUCNS"
         : "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table",
       labour: us
         ? "https://fred.stlouisfed.org/series/UNRATE"
