@@ -10,20 +10,18 @@ const KEY = "trading-os-setup-library-v1";
 const blank = { name: "", timeframe: "", entry: "", confirmation: "", invalidation: "", risk: "", notes: "" };
 const uid = () => crypto.randomUUID();
 function migrate(s: Setup): Setup {
-  const rules = s.rules || (s.confirmation || "").split(/\n/).map(x => x.trim()).filter(Boolean).map(text => ({id:uid(),text,required:true}));
+  let rules = s.rules || (s.confirmation || "").split(/\n/).map(x => x.trim()).filter(Boolean).map(text => ({id:uid(),text,required:true}));
   if (/asian range 50% continuation/i.test(s.name)) {
-    const additions = [
-      { text: "Price is inside the Asian Range", required: true },
-      { text: "Entry must occur between 09:00 and 11:30 (strategy timezone to be specified)", required: true },
-      { text: "Ideally at the Asian Range 50% equilibrium with a 1H bullish/bearish Order Block aligned with the entry direction", required: false },
-    ];
-    for (const addition of additions) {
-      if (!rules.some(r => r.text.toLowerCase() === addition.text.toLowerCase())) {
-        rules.push({ id: uid(), ...addition });
-      }
-    }
+    // Merge older Asian Range confirmations into one clear rule, preserving other custom rules.
+    rules = rules.filter(r => !/^(price is inside the asian range|ideally at the asian range 50% equilibrium|price must be inside the asian range)/i.test(r.text));
+    const location = "Price must be inside the Asian Range, ideally near its 50% equilibrium level and a direction-aligned 1H bullish/bearish Order Block (OB)";
+    if (!rules.some(r => r.text === location)) rules.push({ id: uid(), text: location, required: true });
+    const time = "Entry must occur between 09:00 and 11:30 (strategy timezone to be specified)";
+    if (!rules.some(r => r.text === time)) rules.push({ id: uid(), text: time, required: true });
   }
-  return {...s, rules, examples: s.examples || []};
+  const entry = s.entry.replace(/wintraday/gi, "intraday");
+  const confirmation = s.confirmation.replace(/wintraday/gi, "intraday");
+  return {...s, entry, confirmation, rules, examples: s.examples || []};
 }
 export default function SetupLibraryPage() {
   const [setups, setSetups] = useState<Setup[]>([]);
