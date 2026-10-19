@@ -12,9 +12,9 @@ const uid = () => crypto.randomUUID();
 function tradingViewImage(url: string): string | null {
   try {
     const u = new URL(url);
-    if (u.hostname === "s3.tradingview.com" && /\\.(png|jpe?g|webp)$/i.test(u.pathname)) return u.toString();
+    if (u.hostname === "s3.tradingview.com" && /\.(png|jpe?g|webp)$/i.test(u.pathname)) return u.toString();
     if (u.hostname === "www.tradingview.com" || u.hostname === "tradingview.com") {
-      const match = u.pathname.match(/^\\/x\\/([a-zA-Z0-9]+)\\/?$/);
+      const match = u.pathname.match(/^\/x\/([a-zA-Z0-9]+)\/?$/);
       if (match) return "https://s3.tradingview.com/snapshots/" + match[1][0] + "/" + match[1] + ".png";
     }
   } catch {}
