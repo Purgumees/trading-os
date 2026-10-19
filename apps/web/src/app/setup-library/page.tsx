@@ -1,49 +1,68 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, Plus, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, ExternalLink, CheckCircle2, Circle, ChevronDown, ChevronUp } from "lucide-react";
 
-type Setup = { id: string; name: string; timeframe: string; entry: string; confirmation: string; invalidation: string; risk: string; notes: string };
+type Rule = { id: string; text: string; required: boolean };
+type Example = { id: string; title: string; date: string; symbol: string; outcome: string; chartUrl: string; notes: string };
+type Setup = { id: string; name: string; timeframe: string; entry: string; confirmation: string; invalidation: string; risk: string; notes: string; rules?: Rule[]; examples?: Example[] };
 const KEY = "trading-os-setup-library-v1";
 const blank = { name: "", timeframe: "", entry: "", confirmation: "", invalidation: "", risk: "", notes: "" };
-const examples = ["Asian Range → London", "4H Supply / Demand"];
+const uid = () => crypto.randomUUID();
+function migrate(s: Setup): Setup {
+  const rules = s.rules || (s.confirmation || "").split(/\n/).map(x => x.trim()).filter(Boolean).map(text => ({id:uid(),text,required:true}));
+  return {...s, rules, examples: s.examples || []};
+}
 export default function SetupLibraryPage() {
   const [setups, setSetups] = useState<Setup[]>([]);
   const [ready, setReady] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(blank);
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [newRule, setNewRule] = useState("");
   const [open, setOpen] = useState(false);
-  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem(KEY) || "[]"); if (Array.isArray(saved)) setSetups(saved); } catch {} setReady(true); }, []);
-  function persist(next: Setup[]) { setSetups(next); try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { alert("Unable to save setups in this browser."); } }
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [addingExample, setAddingExample] = useState<string | null>(null);
+  const [example, setExample] = useState({title:"",date:"",symbol:"",outcome:"Win",chartUrl:"",notes:""});
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem(KEY) || "[]"); if (Array.isArray(saved)) setSetups(saved.map(migrate)); } catch {} setReady(true); }, []);
+  function persist(next: Setup[]) { try { localStorage.setItem(KEY, JSON.stringify(next)); setSetups(next); } catch { alert("Unable to save setups in this browser."); } }
+  function startNew() { setEditing(null); setForm(blank); setRules([]); setNewRule(""); setOpen(true); }
+  function edit(s: Setup) { setEditing(s.id); setForm({name:s.name,timeframe:s.timeframe,entry:s.entry,confirmation:s.confirmation,invalidation:s.invalidation,risk:s.risk,notes:s.notes}); setRules(s.rules || []); setNewRule(""); setOpen(true); window.scrollTo({top:0,behavior:"smooth"}); }
   function save(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return;
-    if (editing) persist(setups.map(s => s.id === editing ? { ...form, name: form.name.trim(), id: editing } : s));
-    else persist([...setups, { ...form, name: form.name.trim(), id: crypto.randomUUID() }]);
-    setOpen(false); setEditing(null); setForm(blank);
+    const finalRules = [...rules, ...(newRule.trim() ? [{id:uid(),text:newRule.trim(),required:true}] : [])];
+    if (editing) persist(setups.map(s => s.id === editing ? {...s,...form,name:form.name.trim(),rules:finalRules} : s));
+    else persist([...setups, {...form,name:form.name.trim(),id:uid(),rules:finalRules,examples:[]}]);
+    setOpen(false);setEditing(null);setForm(blank);setRules([]);setNewRule("");
   }
-  function edit(s: Setup) { setEditing(s.id); setForm({ name:s.name,timeframe:s.timeframe,entry:s.entry,confirmation:s.confirmation,invalidation:s.invalidation,risk:s.risk,notes:s.notes }); setOpen(true); }
-  function remove(id: string) { if (window.confirm("Delete this setup?")) persist(setups.filter(s => s.id !== id)); }
+  function remove(id: string) { if (window.confirm("Delete this setup and its examples?")) persist(setups.filter(s=>s.id!==id)); }
+  function addExample(e: React.FormEvent, id: string) {
+    e.preventDefault();
+    const url=example.chartUrl.trim();
+    if (url) { try {const parsed=new URL(url);if(!["https:","http:"].includes(parsed.protocol)) throw Error();}catch{alert("Enter a valid TradingView URL starting with https://");return;} }
+    persist(setups.map(s=>s.id===id?{...s,examples:[...(s.examples||[]),{...example,id:uid(),chartUrl:url}]}:s));
+    setAddingExample(null);setExample({title:"",date:"",symbol:"",outcome:"Win",chartUrl:"",notes:""});
+  }
+  function removeExample(setupId:string,exampleId:string) {if(!window.confirm("Remove this example?"))return;persist(setups.map(s=>s.id===setupId?{...s,examples:(s.examples||[]).filter(x=>x.id!==exampleId)}:s));}
   const fields: {key:keyof typeof blank;label:string;multiline?:boolean;placeholder?:string}[] = [
     {key:"name",label:"Setup name",placeholder:"e.g. Asian Range → London"},
-    {key:"timeframe",label:"Timeframes",placeholder:"e.g. 4H bias / 5m entry"},
-    {key:"entry",label:"Entry conditions",multiline:true},
-    {key:"confirmation",label:"Confirmations",multiline:true},
+    {key:"timeframe",label:"Timeframes",placeholder:"e.g. 4H bias / 1H confirmation"},
+    {key:"entry",label:"Market bias & setup conditions",multiline:true,placeholder:"Define structure, location and what must happen before looking for an entry."},
     {key:"invalidation",label:"Invalidation / Stop loss",multiline:true},
     {key:"risk",label:"Targets / Risk management",multiline:true},
-    {key:"notes",label:"Notes / TradingView chart links",multiline:true}
+    {key:"notes",label:"Additional notes",multiline:true}
   ];
   return <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h1 className="flex items-center gap-2 text-2xl font-semibold"><BookOpen className="h-6 w-6"/> Setup Library</h1><p className="mt-1 text-sm text-muted-foreground">Build your trading playbook before tagging trades in Trade Review.</p></div>
-      <button onClick={() => {setEditing(null);setForm(blank);setOpen(true);}} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4"/> New Setup</button>
-    </div>
-    {open && <form onSubmit={save} className="space-y-4 rounded-xl border bg-card p-5">
-      <h2 className="font-semibold">{editing ? "Edit Setup" : "Create Setup"}</h2>
-      <div className="grid gap-4 md:grid-cols-2">{fields.map(f => <label key={f.key} className={"block space-y-1 text-sm "+(f.multiline?"md:col-span-2":"")}><span className="font-medium">{f.label}</span>{f.multiline ? <textarea rows={3} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} className="w-full rounded-md border bg-background p-2" placeholder={f.placeholder}/> : <input required={f.key==="name"} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} className="w-full rounded-md border bg-background p-2" placeholder={f.placeholder}/>}</label>)}</div>
-      <div className="flex gap-2"><button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Save Setup</button><button type="button" onClick={()=>setOpen(false)} className="rounded-md border px-4 py-2 text-sm">Cancel</button></div>
-    </form>}
-    {!ready ? <p>Loading setups…</p> : setups.length ? <div className="grid gap-4 md:grid-cols-2">{setups.map(s=><article key={s.id} className="space-y-3 rounded-xl border bg-card p-5"><div className="flex items-start justify-between gap-2"><div><h2 className="font-semibold">{s.name}</h2><p className="text-xs text-muted-foreground">{s.timeframe || "No timeframe specified"}</p></div><div className="flex gap-2"><button aria-label={"Edit "+s.name} onClick={()=>edit(s)} className="rounded-md border p-2"><Pencil className="h-4 w-4"/></button><button aria-label={"Delete "+s.name} onClick={()=>remove(s.id)} className="rounded-md border p-2"><Trash2 className="h-4 w-4"/></button></div></div>{([["Entry",s.entry],["Confirmations",s.confirmation],["Invalidation",s.invalidation],["Risk / Targets",s.risk],["Notes",s.notes]] as const).filter(([,v])=>v).map(([k,v])=><div key={k}><p className="text-xs font-medium text-muted-foreground">{k}</p><p className="whitespace-pre-wrap text-sm">{v}</p></div>)}</article>)}</div> : <section className="rounded-xl border border-dashed p-8 text-center"><h2 className="font-medium">Your setup library is empty</h2><p className="mt-2 text-sm text-muted-foreground">Start with one of your own strategies, such as {examples.join(" or ")}.</p></section>}
-    <p className="text-xs text-muted-foreground">Setups are saved in this browser only. Trade tagging and cross-device sync are not connected yet.</p>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="flex items-center gap-2 text-2xl font-semibold"><BookOpen className="h-6 w-6"/> Setup Library</h1><p className="mt-1 text-sm text-muted-foreground">Define your playbook, check entry confirmations and collect real TradingView examples.</p></div><button onClick={startNew} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Plus className="h-4 w-4"/> New Setup</button></div>
+    {open && <form onSubmit={save} className="space-y-5 rounded-xl border bg-card p-5"><h2 className="font-semibold">{editing?"Edit Setup":"Create Setup"}</h2><div className="grid gap-4 md:grid-cols-2">{fields.map(f=><label key={f.key} className={"block space-y-1 text-sm "+(f.multiline?"md:col-span-2":"")}><span className="font-medium">{f.label}</span>{f.multiline?<textarea rows={3} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} className="w-full rounded-md border bg-background p-2" placeholder={f.placeholder}/>:<input required={f.key==="name"} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} className="w-full rounded-md border bg-background p-2" placeholder={f.placeholder}/>}</label>)}</div>
+    <section className="space-y-3 rounded-lg border p-4"><div><h3 className="font-semibold">Entry confirmations checklist</h3><p className="text-xs text-muted-foreground">Add each confirmation separately. Mark essential conditions as Required; others as Optional.</p></div>{rules.map(r=><div key={r.id} className="flex flex-wrap items-center gap-2"><input aria-label="Confirmation" className="min-w-[170px] flex-1 rounded-md border bg-background p-2 text-sm" value={r.text} onChange={e=>setRules(rules.map(x=>x.id===r.id?{...x,text:e.target.value}:x))}/><label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={r.required} onChange={e=>setRules(rules.map(x=>x.id===r.id?{...x,required:e.target.checked}:x))}/> Required</label><button type="button" aria-label="Remove confirmation" onClick={()=>setRules(rules.filter(x=>x.id!==r.id))} className="rounded border p-2"><Trash2 className="h-4 w-4"/></button></div>)}<div className="flex gap-2"><input className="min-w-0 flex-1 rounded-md border bg-background p-2 text-sm" placeholder="e.g. 1H bullish structure breaks before bearish continuation" value={newRule} onChange={e=>setNewRule(e.target.value)}/><button type="button" onClick={()=>{if(newRule.trim()){setRules([...rules,{id:uid(),text:newRule.trim(),required:true}]);setNewRule("");}}} className="rounded-md border px-3 text-sm">Add rule</button></div></section>
+    <div className="flex gap-2"><button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Save Setup</button><button type="button" onClick={()=>setOpen(false)} className="rounded-md border px-4 py-2 text-sm">Cancel</button></div></form>}
+    {!ready?<p>Loading setups…</p>:setups.length?<div className="space-y-4">{setups.map(s=>{const required=(s.rules||[]).filter(r=>r.required);const passed=required.filter(r=>checked[s.id+":"+r.id]).length;return <article key={s.id} className="space-y-4 rounded-xl border bg-card p-5"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="text-lg font-semibold">{s.name}</h2><p className="text-sm text-muted-foreground">{s.timeframe||"No timeframe specified"}</p></div><div className="flex gap-2"><button aria-label={"Edit "+s.name} onClick={()=>edit(s)} className="rounded-md border p-2"><Pencil className="h-4 w-4"/></button><button aria-label={"Delete "+s.name} onClick={()=>remove(s.id)} className="rounded-md border p-2"><Trash2 className="h-4 w-4"/></button></div></div>
+    {([["Market bias & conditions",s.entry],["Invalidation",s.invalidation],["Risk / Targets",s.risk],["Notes",s.notes]] as const).filter(([,v])=>v).map(([k,v])=><div key={k}><p className="mb-1 text-xs font-medium text-muted-foreground">{k}</p><p className="whitespace-pre-wrap text-sm">{v}</p></div>)}
+    <section className="space-y-2 rounded-lg border p-4"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Entry confirmations</h3><span className="text-xs text-muted-foreground">Required: {passed}/{required.length}</span></div>{(s.rules||[]).length?(s.rules||[]).map(r=><label key={r.id} className="flex cursor-pointer items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={!!checked[s.id+":"+r.id]} onChange={e=>setChecked({...checked,[s.id+":"+r.id]:e.target.checked})}/><span className="flex-1">{r.text}</span><span className="text-xs text-muted-foreground">{r.required?"Required":"Optional"}</span></label>):<p className="text-sm text-muted-foreground">No checklist yet. Edit the setup to add required confirmations.</p>}{required.length>0&&<p className="text-xs font-medium">{passed===required.length?<span className="text-emerald-500">All required confirmations checked</span>:"Required confirmations not complete"}</p>}<p className="text-xs text-muted-foreground">Checklist is a temporary planning aid, not a saved trade record.</p></section>
+    <section className="space-y-3 rounded-lg border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><button onClick={()=>setExpanded(expanded===s.id?null:s.id)} className="flex items-center gap-2 font-semibold">Real Trade Examples ({(s.examples||[]).length}) {expanded===s.id?<ChevronUp className="h-4 w-4"/>:<ChevronDown className="h-4 w-4"/>}</button><button onClick={()=>{setExpanded(s.id);setAddingExample(s.id);setExample({title:"",date:"",symbol:"",outcome:"Win",chartUrl:"",notes:""});}} className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs"><Plus className="h-4 w-4"/> Add Example</button></div>{expanded===s.id&&<div className="space-y-3">{(s.examples||[]).length===0&&<p className="text-sm text-muted-foreground">Add a TradingView chart link and your trade notes to build a visual example library.</p>}{(s.examples||[]).map(ex=><div key={ex.id} className="space-y-2 rounded-md bg-muted/30 p-3"><div className="flex justify-between gap-2"><div><p className="font-medium">{ex.title||ex.symbol||"Trade example"}</p><p className="text-xs text-muted-foreground">{[ex.date,ex.symbol,ex.outcome].filter(Boolean).join(" · ")}</p></div><button aria-label="Delete example" onClick={()=>removeExample(s.id,ex.id)}><Trash2 className="h-4 w-4"/></button></div>{ex.notes&&<p className="whitespace-pre-wrap text-sm">{ex.notes}</p>}{ex.chartUrl&&<a href={ex.chartUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-500 underline">Open TradingView chart <ExternalLink className="h-3 w-3"/></a>}</div>)}{addingExample===s.id&&<form onSubmit={e=>addExample(e,s.id)} className="grid gap-3 rounded-lg border p-3 md:grid-cols-2">{([["title","Example title"],["date","Trade date"],["symbol","Symbol"],["chartUrl","TradingView chart URL"]] as const).map(([key,label])=><label key={key} className="space-y-1 text-xs"><span>{label}</span><input type={key==="date"?"date":"text"} required={key==="title"} value={example[key]} onChange={e=>setExample({...example,[key]:e.target.value})} className="w-full rounded-md border bg-background p-2 text-sm" placeholder={key==="chartUrl"?"https://www.tradingview.com/x/...":""}/></label>)}<label className="space-y-1 text-xs"><span>Outcome</span><select value={example.outcome} onChange={e=>setExample({...example,outcome:e.target.value})} className="w-full rounded-md border bg-background p-2 text-sm"><option>Win</option><option>Loss</option><option>Breakeven</option><option>Missed</option></select></label><label className="space-y-1 text-xs md:col-span-2"><span>What happened / lessons</span><textarea rows={3} value={example.notes} onChange={e=>setExample({...example,notes:e.target.value})} className="w-full rounded-md border bg-background p-2 text-sm"/></label><div className="flex gap-2 md:col-span-2"><button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground">Save Example</button><button type="button" onClick={()=>setAddingExample(null)} className="rounded-md border px-3 py-2 text-sm">Cancel</button></div></form>}</div>}</section></article>})}</div>:<section className="rounded-xl border border-dashed p-8 text-center"><h2 className="font-medium">Your setup library is empty</h2><p className="mt-2 text-sm text-muted-foreground">Create your first trading setup and define its entry confirmations.</p></section>}
+    <p className="text-xs text-muted-foreground">Setups and example links are saved in this browser only. Trade Review tagging, image uploads and cross-device sync are not connected yet.</p>
   </main>;
 }
