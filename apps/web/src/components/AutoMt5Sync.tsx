@@ -10,6 +10,7 @@ const ids=(s?:string)=>new Set((s||'').split('::').filter(Boolean));
 const sameSource=(a?:string,b?:string)=>{const aa=ids(a),bb=ids(b);return [...aa].some(x=>bb.has(x));};
 
 async function synchronize(){
+ let imported=0, stale=0, failed=0;
  const raw=localStorage.getItem(MT5_KEY),accountRaw=localStorage.getItem(JOURNAL_ACCOUNTS_KEY);
  if(!raw||!accountRaw)return;
  const c=JSON.parse(raw) as Connection;
@@ -20,11 +21,13 @@ async function synchronize(){
   if(!account)continue;
   try{
    const response=await fetch('/api/mt5/snapshots',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+c.key},body:JSON.stringify({account:link.number}),cache:'no-store'});
-   if(!response.ok)continue;
+   if(!response.ok){failed++;continue;}
    const body=await response.json();
-   if(!body.snapshot)continue;
+   if(!body.snapshot){stale++;continue;}
    const snapshot=readMt5(body.snapshot);
    if(snapshot.account!==link.number)continue;
+   const received=Date.parse(snapshot.receivedAt||'');
+   if(!Number.isFinite(received)||Date.now()-received>15*60*1000){stale++;continue;}
    const candidates=mt5Candidates(snapshot,account).plans;
    if(!candidates.length)continue;
    const currentRaw=localStorage.getItem(BEFORE_TRADE_KEY);
@@ -47,9 +50,11 @@ async function synchronize(){
     readTradePlans(current);
     localStorage.setItem(BEFORE_TRADE_KEY,JSON.stringify(current));
     window.dispatchEvent(new Event('trading-os-journal-updated'));
+    imported+=candidates.length;
    }
-  }catch(e){console.warn('MT5 automatic journal sync skipped:',e);}
+  }catch(e){failed++;console.warn('MT5 automatic journal sync skipped:',e);}
  }
+ window.dispatchEvent(new CustomEvent('trading-os-mt5-sync-status',{detail:{at:new Date().toISOString(),imported,stale,failed}}));
 }
 export function AutoMt5Sync(){
  useEffect(()=>{
@@ -58,8 +63,10 @@ export function AutoMt5Sync(){
   void run();
   const timer=window.setInterval(()=>void run(),300000);
   const onVisible=()=>{if(document.visibilityState==='visible')void run();};
+  const onFocus=()=>void run();
   document.addEventListener('visibilitychange',onVisible);
-  return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
+  window.addEventListener('focus',onFocus);
+  return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);window.removeEventListener('focus',onFocus);};
  },[]);
  return null;
 }
