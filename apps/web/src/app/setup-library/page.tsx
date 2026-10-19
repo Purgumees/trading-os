@@ -186,17 +186,21 @@ export default function SetupLibraryPage() {
     </button>
   </div>;
 })}</div>
-{(s.examples||[]).filter(ex=>openedExample===s.id+":"+ex.id).map(ex=><div key={ex.id} className="space-y-4 rounded-lg border bg-muted/20 p-4 md:p-6">
-  <div className="flex flex-wrap items-start justify-between gap-3">
-    <div><h3 className="text-lg font-semibold">{ex.title||ex.symbol||"Trade example"}</h3><p className="text-sm text-muted-foreground">{[ex.date,ex.symbol,ex.outcome].filter(Boolean).join(" · ")}</p></div>
-    <div className="flex gap-2"><button type="button" onClick={()=>setOpenedExample(null)} className="rounded-md border px-3 py-2 text-sm">Close</button><button type="button" aria-label="Delete example" onClick={()=>{removeExample(s.id,ex.id);setOpenedExample(null);}} className="rounded-md border p-2"><Trash2 className="h-4 w-4"/></button></div>
-  </div>
-  {(ex.rr||ex.sl||ex.timing)&&<p className="text-sm">{[ex.rr&&"RR: "+ex.rr,ex.sl&&"SL: "+ex.sl,ex.timing&&"Entry time: "+ex.timing].filter(Boolean).join(" · ")}</p>}
-  {ex.notes&&<p className="whitespace-pre-wrap text-sm">{ex.notes}</p>}
-  <div className="flex flex-col gap-6">
-    {ex.image4h?<ScreenshotDisplay image={ex.image4h} label="1H / 4H"/>:ex.chartUrl&&<ChartPreview url={ex.chartUrl} label="1H / 4H"/>}
-    {ex.image15m?<ScreenshotDisplay image={ex.image15m} label="15M"/>:ex.chart15m&&<ChartPreview url={ex.chart15m} label="15M"/>}
-    {ex.image5m?<ScreenshotDisplay image={ex.image5m} label="5M / 1M"/>:ex.chart5m&&<ChartPreview url={ex.chart5m} label="5M / 1M"/>}
+{(s.examples||[]).filter(ex=>openedExample===s.id+":"+ex.id).map(ex=><div key={ex.id} role="dialog" aria-modal="true" aria-label={ex.title||"Trade details"} onClick={()=>setOpenedExample(null)} className="fixed inset-0 z-[90] bg-black/85 p-2 md:p-6">
+  <div onClick={e=>e.stopPropagation()} className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-background p-4 md:px-6">
+      <div className="min-w-0"><h3 className="truncate text-lg font-semibold">{ex.title||ex.symbol||"Trade example"}</h3><p className="text-sm text-muted-foreground">{[ex.date,ex.symbol,ex.outcome].filter(Boolean).join(" · ")}</p></div>
+      <div className="flex gap-2"><button type="button" onClick={()=>setOpenedExample(null)} className="rounded-md border px-4 py-2 text-sm font-medium">Close ✕</button><button type="button" aria-label="Delete example" onClick={()=>{removeExample(s.id,ex.id);setOpenedExample(null);}} className="rounded-md border p-2"><Trash2 className="h-4 w-4"/></button></div>
+    </div>
+    <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
+      {(ex.rr||ex.sl||ex.timing)&&<p className="text-sm">{[ex.rr&&"RR: "+ex.rr,ex.sl&&"SL: "+ex.sl,ex.timing&&"Entry time: "+ex.timing].filter(Boolean).join(" · ")}</p>}
+      {ex.notes&&<p className="whitespace-pre-wrap text-sm">{ex.notes}</p>}
+      <div className="flex flex-col gap-6">
+        {ex.image4h?<ScreenshotDisplay image={ex.image4h} label="1H / 4H"/>:ex.chartUrl&&<ChartPreview url={ex.chartUrl} label="1H / 4H"/>}
+        {ex.image15m?<ScreenshotDisplay image={ex.image15m} label="15M"/>:ex.chart15m&&<ChartPreview url={ex.chart15m} label="15M"/>}
+        {ex.image5m?<ScreenshotDisplay image={ex.image5m} label="5M / 1M"/>:ex.chart5m&&<ChartPreview url={ex.chart5m} label="5M / 1M"/>}
+      </div>
+    </div>
   </div>
 </div>)}{addingExample===s.id&&<form onSubmit={e=>addExample(e,s.id)} className="grid gap-3 rounded-lg border p-3 md:grid-cols-2">{([["title","Example title"],["date","Trade date"],["symbol","Symbol"],["rr","RR (e.g. 1:3)"],["sl","SL (price / pips)"],["timing","Entry time (HH:MM + timezone)"]] as const).map(([key,label])=><label key={key} className="space-y-1 text-xs"><span>{label}</span><input type={key==="date"?"date":"text"} required={key==="title"} value={example[key]} onChange={e=>setExample({...example,[key]:e.target.value})} className="w-full rounded-md border bg-background p-2 text-sm" placeholder={key.startsWith("chart")?"https://www.tradingview.com/x/...":key==="timing"?"09:45 Europe/Helsinki":""}/></label>)}<div className="grid gap-4 md:col-span-2 lg:grid-cols-1">
   <ScreenshotField label="1H / 4H screenshot" value={example.image4h} onChange={v=>setExample(x=>({...x,image4h:v}))}/>
