@@ -12,12 +12,24 @@ const uid = () => crypto.randomUUID();
 function migrate(s: Setup): Setup {
   let rules = s.rules || (s.confirmation || "").split(/\n/).map(x => x.trim()).filter(Boolean).map(text => ({id:uid(),text,required:true}));
   if (/asian range 50% continuation/i.test(s.name)) {
-    // Merge older Asian Range confirmations into one clear rule, preserving other custom rules.
-    rules = rules.filter(r => !/^(price is inside the asian range|ideally at the asian range 50% equilibrium|price must be inside the asian range)/i.test(r.text));
-    const location = "Price must be inside the Asian Range, ideally near its 50% equilibrium level and a direction-aligned 1H bullish/bearish Order Block (OB)";
-    if (!rules.some(r => r.text === location)) rules.push({ id: uid(), text: location, required: true });
-    const time = "Entry must occur between 09:00 and 11:30 (strategy timezone to be specified)";
-    if (!rules.some(r => r.text === time)) rules.push({ id: uid(), text: time, required: true });
+    // Keep user-authored confirmations, clean duplicates and add the zone rule directly after the first.
+    rules = rules.map(r => ({...r, text:r.text.replace(/wintraday/gi,"INTRADAY")}));
+    const seenTime = new Set<string>();
+    rules = rules.filter(r => {
+      if (/entry must occur between 09[:.]00 and 11[:.]30/i.test(r.text)) {
+        if (seenTime.has("entry-window")) return false;
+        seenTime.add("entry-window");
+        return true;
+      }
+      return true;
+    });
+    const zone = "PRICE MUST BE INSIDE OR REACTING FROM A 4H / 1H SUPPLY OR DEMAND ZONE";
+    if (!rules.some(r => /inside or reacting from a 4h\s*\/\s*1h supply or demand zone/i.test(r.text))) {
+      rules.splice(Math.min(1,rules.length),0,{id:uid(),text:zone,required:true});
+    }
+    const location = "PRICE MUST BE INSIDE THE ASIAN RANGE, IDEALLY NEAR ITS 50% EQUILIBRIUM LEVEL AND A DIRECTION-ALIGNED 1H BULLISH/BEARISH ORDER BLOCK (OB)";
+    if (!rules.some(r => /price (must be|is) inside the asian range/i.test(r.text))) rules.push({id:uid(),text:location,required:true});
+    if (!rules.some(r => /entry must occur between 09[:.]00 and 11[:.]30/i.test(r.text))) rules.push({id:uid(),text:"ENTRY MUST OCCUR BETWEEN 09:00 AND 11:30 (EEST / FINNISH SUMMER TIME)",required:true});
   }
   const entry = s.entry.replace(/wintraday/gi, "intraday");
   const confirmation = s.confirmation.replace(/wintraday/gi, "intraday");
