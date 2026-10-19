@@ -11,6 +11,17 @@ const blank = { name: "", timeframe: "", entry: "", confirmation: "", invalidati
 const uid = () => crypto.randomUUID();
 function migrate(s: Setup): Setup {
   const rules = s.rules || (s.confirmation || "").split(/\n/).map(x => x.trim()).filter(Boolean).map(text => ({id:uid(),text,required:true}));
+  if (/asian range 50% continuation/i.test(s.name)) {
+    const additions = [
+      { text: "Price is inside the Asian Range", required: true },
+      { text: "Ideally at the Asian Range 50% equilibrium with a 1H bullish/bearish Order Block aligned with the entry direction", required: false },
+    ];
+    for (const addition of additions) {
+      if (!rules.some(r => r.text.toLowerCase() === addition.text.toLowerCase())) {
+        rules.push({ id: uid(), ...addition });
+      }
+    }
+  }
   return {...s, rules, examples: s.examples || []};
 }
 export default function SetupLibraryPage() {
