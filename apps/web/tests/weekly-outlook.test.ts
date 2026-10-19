@@ -15,7 +15,7 @@ it('requires macro and matched-date yield differential to agree; divergent dates
  eur.yields!.rows[1]!.two=2.1;usd.yields!.rows[1]!.date='2026-10-07';expect(weeklyOutlook({asOf,inputs:[eur,usd]}).pairs[0]!.yieldGapChange).toBeNull();
 });
 it('excludes stale yield endpoints and preserves the unemployment improvement direction',()=>{
- const d=input('EUR');const signals=currencyDrivers(d,asOf);expect(signals[3]!.direction).toBe(1);expect(currencyDrivers(d,'2027-01-01T00:00:00Z')[1]!.direction).toBeNull();
+ const d=input('EUR');const signals=currencyDrivers(d,asOf);expect(signals[4]!.direction).toBe(1);expect(currencyDrivers(d,'2027-01-01T00:00:00Z')[1]!.direction).toBeNull();
 });
 it('Sunday plans the coming Monday in Tallinn, with DST-safe week dates',()=>{expect(outlookWeek(asOf)).toBe('2026-10-12');expect(outlookWeek('2026-10-12T00:00:00Z')).toBe('2026-10-12');expect(outlookWeek('2026-10-10T21:30:00Z')).toBe('2026-10-12');});
 import {parseWeeklyEvents} from '../src/lib/weekly-calendar';
