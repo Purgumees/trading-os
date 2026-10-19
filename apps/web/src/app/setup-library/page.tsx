@@ -14,6 +14,7 @@ function migrate(s: Setup): Setup {
   if (/asian range 50% continuation/i.test(s.name)) {
     const additions = [
       { text: "Price is inside the Asian Range", required: true },
+      { text: "Entry must occur between 09:00 and 11:30 (strategy timezone to be specified)", required: true },
       { text: "Ideally at the Asian Range 50% equilibrium with a 1H bullish/bearish Order Block aligned with the entry direction", required: false },
     ];
     for (const addition of additions) {
