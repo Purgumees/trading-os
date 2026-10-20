@@ -37,7 +37,7 @@ const NAV = [
   { href: "/forecast", label: "Weekly Forecast", icon: NotebookPen },
   { href: "/weekly-development", label: "Weekly Development", icon: BookText },
   { href: "/before-trade", label: "Trade Planning & Review", icon: ListChecks },
-  { href: "/intraday-checklist", label: "Intraday Before / After", icon: ListChecks },
+  { href: "/intraday-checklist", label: "Live Intraday Planner", icon: ListChecks },
   { href: "/trade-journal", label: "Trading Journal · Demo", icon: NotebookPen },
   { href: "/trader-development", label: "Trader Development", icon: BookOpen },
   { href: "/setup-library", label: "Setup Library", icon: BookOpen },
