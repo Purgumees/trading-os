@@ -27,7 +27,10 @@ async function synchronize(){
    const snapshot=readMt5(body.snapshot);
    if(snapshot.account!==link.number)continue;
    const received=Date.parse(snapshot.receivedAt||'');
-   if(!Number.isFinite(received)||Date.now()-received>15*60*1000){stale++;continue;}
+   if(!Number.isFinite(received)){stale++;continue;}
+   // Import historical closed trades even when the terminal has not uploaded in the last 15 minutes.
+   // Snapshot age is a freshness indicator, not a reason to discard valid trade history.
+   if(Date.now()-received>15*60*1000)stale++;
    const candidates=mt5Candidates(snapshot,account).plans;
    if(!candidates.length)continue;
    const currentRaw=localStorage.getItem(BEFORE_TRADE_KEY);
