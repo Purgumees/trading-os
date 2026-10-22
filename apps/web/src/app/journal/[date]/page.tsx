@@ -1,5 +1,6 @@
 "use client";
 import { AiRecap } from "@/components/ai-recap";
+import { PlannerSessionsForDay } from "@/components/PlannerSessionsForDay";
 
 import Link from "next/link";
 import { Suspense, use, useRef, useState } from "react";
@@ -68,6 +69,7 @@ function JournalDay({ date }: { date: string }) {
   return (
     <div>
       <FilterBar title={`Journal · ${date}`} />
+      <div className="px-4 pt-4"><PlannerSessionsForDay date={date} /></div>
       <div className="grid gap-3 p-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-3 xl:col-span-2">
           {m && m.closedTrades > 0 ? (
