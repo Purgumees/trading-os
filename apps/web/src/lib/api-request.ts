@@ -14,8 +14,12 @@ export function acquireJson<T>(url: string): { promise: Promise<T>; release: () 
     const next: PendingRequest = { controller, users: 0, promise: Promise.resolve() };
     next.promise = fetch(url, { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          throw new Error(`API returned a non-JSON response (${response.status}) for ${url}. The server may be unavailable or the request may have been redirected. Check the deployment and API route.`);
+        }
         const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? `Request failed (${response.status})`);
+        if (!response.ok) throw new Error(body?.error ?? `Request failed (${response.status}) for ${url}`);
         return body;
       })
       .finally(() => {
