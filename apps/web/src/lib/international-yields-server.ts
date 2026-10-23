@@ -62,6 +62,14 @@ export async function internationalYields(country:Country):Promise<YieldData>{
    result.rows=nzSnapshot.rows;
    result.definition="New Zealand RBNZ B2 · verified official snapshot · 2Y and 10Y government yields";
    result.note=`Verified source snapshot captured ${nzSnapshot.capturedAt}; latest observation ${result.rows.at(-1)?.date}. Automatic refresh unavailable from this server; this is not a live feed. A constant 30Y series is not supplied.`;
+   // Historical snapshots must not masquerade as current market yields.
+   const latestDate=result.rows.at(-1)?.date;
+   const ageDays=latestDate?(Date.now()-Date.parse(latestDate+'T00:00:00Z'))/86400000:Infinity;
+   if(!Number.isFinite(ageDays)||ageDays>7){
+    result.rows=[];
+    result.error=`NZD yield snapshot is stale (last observation ${latestDate??'unknown'}); live RBNZ source unavailable.`;
+    result.note+=' Snapshot excluded from current yield comparisons because it is more than 7 days old.';
+   }
   }else result.error=e instanceof Error?e.message:'Yield source unavailable';
  }
  return result;
