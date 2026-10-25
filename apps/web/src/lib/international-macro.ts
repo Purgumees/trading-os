@@ -19,7 +19,8 @@ export const countries = {
     bank: "Reserve Bank of Australia",
     gdp: "NGDPRSAXDCAUQ",
     labour: "LRHUTTTTAUM156S",
-    quarterlyCpi: true,
+    // ABS publishes monthly headline CPI; do not discard non-quarter-end observations.
+    quarterlyCpi: false,
     quarterlyLabour: false,
     employment: "LFEMTTTTAUM647S",
     quarterlyEmployment: false,
