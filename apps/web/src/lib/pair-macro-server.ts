@@ -25,7 +25,7 @@ export async function comparisonSnapshot(currency: Currency): Promise<Comparison
       quarterlyCpi: c.quarterlyCpi,
       quarterlyLabour: c.quarterlyLabour,
       sources: {
-        policy: currency === "AUD" ? "https://www.rba.gov.au/statistics/tables/" : "https://data.bis.org/topics/CBPOL",
+        policy: currency === "AUD" ? "https://www.rba.gov.au/statistics/tables/" : currency === "CAD" ? "https://www.bankofcanada.ca/valet/observations/V39079/json" : "https://data.bis.org/topics/CBPOL",
         inflation: "https://data.bis.org/topics/CPI",
         labour: `https://fred.stlouisfed.org/series/${c.labour}`,
       },
