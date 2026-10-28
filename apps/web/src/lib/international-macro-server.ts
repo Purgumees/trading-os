@@ -63,10 +63,24 @@ async function newZealandGdp() {
   if (!rows.length) throw new Error("Stats NZ GDP series unavailable");
   return { rows, source: release };
 }
+// BoC V39079 is the official business-daily overnight target, not a BIS proxy.
+function bocPolicyObservations(data:unknown):Observation[] {
+  const observations=(data as {observations?:Array<{d?:string;V39079?:{v?:string}}>} | null)?.observations;
+  if(!Array.isArray(observations))throw new Error("Bank of Canada policy observations unavailable");
+  const rows=observations.flatMap(r=>{
+    const date=r.d,raw=r.V39079?.v;
+    if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||typeof raw!=="string"||!raw.trim()||!Number.isFinite(Number(raw)))return [];
+    return [{date,value:Number(raw)}];
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!rows.length)throw new Error("Bank of Canada policy rate has no valid observations");
+  return rows.slice(-180);
+}
+
 export async function countryData(country: Country): Promise<CountryData> {
   const c = countries[country];
   const results = await Promise.allSettled([
     country === "aud" ? download("https://www.rba.gov.au/statistics/tables/csv/f1-data.csv").then(r=>r.text()).then(rbaPolicyObservations) :
+    country === "cad" ? download("https://www.bankofcanada.ca/valet/observations/V39079/json?recent=180").then(r=>r.json()).then(bocPolicyObservations) :
     download(
       `https://stats.bis.org/api/v1/data/WS_CBPOL/D.${c.area}?startPeriod=2025-01-01&format=csv`,
     )
