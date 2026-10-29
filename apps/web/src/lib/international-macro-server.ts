@@ -110,21 +110,32 @@ export async function countryData(country: Country): Promise<CountryData> {
     ),
   ]);
   const [policy, inflation, gdp, labour, employment] = results;
+  // Fail closed when daily policy observations lag the announced central-bank decision.
+  const policyRows = policy.status === "fulfilled" ? policy.value : [];
+  const latestPolicy = policyRows.at(-1);
+  const today = new Date().toISOString().slice(0, 10);
+  const ageDays = latestPolicy ? Math.floor((Date.parse(today + "T00:00:00Z") - Date.parse(latestPolicy.date + "T00:00:00Z")) / 86400000) : Infinity;
+  const cadDecisionNotReflected = country === "cad" && today >= "2026-10-29" && latestPolicy !== undefined && latestPolicy.date < "2026-10-29" && latestPolicy.value !== 2.5;
+  const stalePolicy = !latestPolicy || ageDays < 0 || ageDays > (country === "cad" ? 1 : 45) || cadDecisionNotReflected;
+  const policyWarnings = stalePolicy ? [cadDecisionNotReflected
+    ? "CRITICAL: STALE DATA — DO NOT USE FOR TRADING. BoC announced 2.50% effective 2026-10-29, but the daily API reports an older rate. Verify at bankofcanada.ca."
+    : "STALE DATA — DO NOT USE FOR TRADING. Policy rate not verified against the latest central-bank decision."] : [];
+
   return {
     employment: employment.status === "fulfilled" ? employment.value : [],
-    policy: policy.status === "fulfilled" ? policy.value : [],
+    policy: stalePolicy ? [] : policyRows,
     inflation: inflation.status === "fulfilled" ? inflation.value : [],
     gdp: gdp.status === "fulfilled" ? gdp.value.rows : [],
     labour: labour.status === "fulfilled" ? labour.value : [],
     gdpSource: gdp.status === "fulfilled" ? gdp.value.source : "",
-    errors: results.flatMap((r, i) =>
+    errors: [...policyWarnings, ...results.flatMap((r, i) =>
       r.status === "rejected"
         ? [
             ["Policy rate", "Inflation", "GDP", "Unemployment", "Employment"][i] +
               " data currently unavailable",
           ]
         : [],
-    ),
+    )],
     fetchedAt: new Date().toISOString(),
   };
 }
