@@ -115,7 +115,7 @@ export async function countryData(country: Country): Promise<CountryData> {
   const latestPolicy = policyRows.at(-1);
   const today = new Date().toISOString().slice(0, 10);
   const ageDays = latestPolicy ? Math.floor((Date.parse(today + "T00:00:00Z") - Date.parse(latestPolicy.date + "T00:00:00Z")) / 86400000) : Infinity;
-  const cadDecisionNotReflected = country === "cad" && today >= "2026-10-29" && latestPolicy !== undefined && latestPolicy.date < "2026-10-29" && latestPolicy.value !== 2.5;
+  const cadDecisionNotReflected = country === "cad" && today >= "2026-10-29" && latestPolicy !== undefined && latestPolicy.value !== 2.5;
   const stalePolicy = !latestPolicy || ageDays < 0 || ageDays > (country === "cad" ? 1 : 45) || cadDecisionNotReflected;
   const policyWarnings = stalePolicy ? [cadDecisionNotReflected
     ? "CRITICAL: STALE DATA — DO NOT USE FOR TRADING. BoC announced 2.50% effective 2026-10-29, but the daily API reports an older rate. Verify at bankofcanada.ca."
