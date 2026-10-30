@@ -33,6 +33,17 @@ const EXCEPTIONS = {
   "@csstools/color-helpers": ["MIT-0"],
 };
 
+// Exact-version exceptions for legacy packages whose published metadata is not
+// SPDX-normalized. These are NOT blanket approvals for future versions.
+// buffers@0.1.1: MIT/X11 in upstream README; Debian's exact-version source
+// review confirms MIT (https://sources.debian.org/copyright/license/node-buffers/0.1.1-2/).
+// chainsaw@0.1.0: MIT/X11 is the legacy name for the MIT license; the exact
+// version is also classified as MIT by Fedora (https://packages.fedoraproject.org/pkgs/nodejs-chainsaw/nodejs-chainsaw/).
+const VERSIONED_EXCEPTIONS = {
+  "buffers@0.1.1": ["Unknown"],
+  "chainsaw@0.1.0": ["MIT/X11"],
+};
+
 const allowedExpression = (expression) => {
   const clean = expression.replace(/^\(|\)$/g, "").trim();
   if (clean.includes(" OR ")) return clean.split(" OR ").some((part) => allowedExpression(part));
@@ -51,6 +62,8 @@ for (const [license, packages] of Object.entries(byLicense)) {
   if (allowedExpression(license)) continue;
   for (const pkg of packages) {
     if (EXCEPTIONS[pkg.name]?.includes(license)) continue;
+    const versions = pkg.versions ?? [];
+    if (versions.length > 0 && versions.every((version) => VERSIONED_EXCEPTIONS[`${pkg.name}@${version}`]?.includes(license))) continue;
     violations.push(`${pkg.name} (${pkg.versions?.join(", ")}): ${license}`);
   }
 }
