@@ -63,7 +63,14 @@ for (const [license, packages] of Object.entries(byLicense)) {
   for (const pkg of packages) {
     if (EXCEPTIONS[pkg.name]?.includes(license)) continue;
     const versions = pkg.versions ?? [];
-    if (\n      versions.length > 0 &&\n      versions.every((version) =>\n        VERSIONED_EXCEPTIONS[`${pkg.name}@${version}`]?.includes(license),\n      )\n    ) {\n      continue;\n    }
+    if (
+      versions.length > 0 &&
+      versions.every((version) =>
+        VERSIONED_EXCEPTIONS[`${pkg.name}@${version}`]?.includes(license),
+      )
+    ) {
+      continue;
+    }
     violations.push(`${pkg.name} (${pkg.versions?.join(", ")}): ${license}`);
   }
 }
