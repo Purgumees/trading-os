@@ -76,6 +76,20 @@ export type CountryData = {
 };
 export const quarter = (date: string) =>
   `${date.slice(0, 4)}-Q${Math.ceil(Number(date.slice(5, 7)) / 3)}`;
+// A business-daily rate should not be marked stale just because markets are closed.
+export function businessDaysSinceObservation(observationDate: string, asOfDate: string): number {
+  const observationTime = Date.parse(`${observationDate}T00:00:00Z`);
+  const asOfTime = Date.parse(`${asOfDate}T00:00:00Z`);
+  if (!Number.isFinite(observationTime) || !Number.isFinite(asOfTime) || observationTime > asOfTime) {
+    return Infinity;
+  }
+  let businessDays = 0;
+  for (let day = observationTime + 86400000; day <= asOfTime; day += 86400000) {
+    const weekday = new Date(day).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) businessDays++;
+  }
+  return businessDays;
+}
 export function csvRecords(content: string): Record<string, string>[] {
   const [header, ...rows] = parseCsv(content.replace(/^\uFEFF/, ""));
   if (!header) return [];
