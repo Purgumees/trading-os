@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bisObservations, cpiHistory, csvRecords, nzGdp } from "../src/lib/international-macro";
+import { bisObservations, businessDaysSinceObservation, cpiHistory, csvRecords, nzGdp } from "../src/lib/international-macro";
 describe("international source transformations", () => {
   it("preserves quoted multiline CSV and skips missing/wrong series", () => {
     const csv =
@@ -14,6 +14,14 @@ describe("international source transformations", () => {
     expect(rows.map((r) => r.date)).toEqual(["2026-Q1", "2026-Q2"]);
     expect(rows[0]?.change).toBeCloseTo(2);
     expect(rows[1]?.change).toBeCloseTo(100 / 102);
+  });
+  it("counts BoC business-day freshness without treating weekends as stale", () => {
+    expect(businessDaysSinceObservation("2026-10-29", "2026-11-01")).toBe(1);
+    expect(businessDaysSinceObservation("2026-10-30", "2026-11-01")).toBe(0);
+    expect(businessDaysSinceObservation("2026-10-29", "2026-11-02")).toBe(2);
+    expect(businessDaysSinceObservation("2026-10-30", "2026-11-03")).toBe(2);
+    expect(businessDaysSinceObservation("2026-11-02", "2026-11-02")).toBe(0);
+    expect(businessDaysSinceObservation("2026-11-03", "2026-11-02")).toBe(Infinity);
   });
   it("selects seasonally adjusted NZ real GDP levels only", () => {
     const csv =
